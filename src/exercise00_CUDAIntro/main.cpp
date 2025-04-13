@@ -52,7 +52,7 @@ void taskA()
     float3 ray_dir_cudafloat3 = make_float3(2, 4, 3);
 
     float3 intersection_cudafloat3;
-     
+
     // - convert ray parameters to GLM vectors using cuda2glm() function.
     // - implement ray-plane intersection.
     // - convert intersection point back to float3 type using glm2cuda() function.
@@ -80,6 +80,30 @@ void taskB()
     // Use d_dataArray as a pointer to device memory
     int *d_dataArray;
 
+    // constant to multiply each number by
+    int constant = 2;
+
+    // init vector
+    const int N = 10000000;
+    dataArray.reserve(N); 
+    dataArray.resize(N);
+
+    // fill the vector with the numbers 1 to N
+    std::iota(dataArray.begin(), dataArray.end(), 1);
+
+    //copy vector to gpu
+    cudaMalloc(&d_dataArray, N * sizeof(int));
+    cudaMemcpy(d_dataArray, dataArray.data(), N * sizeof(int), cudaMemcpyHostToDevice);
+
+    //kernel call
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+    VecMulConst<<<blocksPerGrid, threadsPerBlock>>>(d_dataArray, N, constant);
+
+    //copy back from gpu to host
+    cudaMemcpy(dataArray.data(), d_dataArray, N * sizeof(int), cudaMemcpyDeviceToHost);
+
+    //print output
     std::cout << "taskB output:" << std::endl;
     std::cout << "\tfirst 10 entries:";
     for (int i = 0; i < std::min<int>(dataArray.size(), 10); ++i)
@@ -93,6 +117,9 @@ void taskB()
         std::cout << " " << dataArray[i];
     }
     std::cout << std::endl;
+
+    //free gpu memory
+    cudaFree(d_dataArray);
 }
 
 void taskC()
