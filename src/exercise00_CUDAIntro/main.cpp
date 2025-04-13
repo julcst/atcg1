@@ -33,13 +33,17 @@ void taskA()
     glm::vec3 plane_point_2 = glm::vec3(4, 3, 2);
     glm::vec3 plane_point_3 = glm::vec3(1, 2, 4);
 
-    // TODO implement
+    // Determine the parameters n, d that describes the plane spanned by the given plane points
     glm::vec3 plane_normal;
     float plane_d;
 
+    plane_normal = glm::normalize(glm::cross(plane_point_2-plane_point_1, plane_point_3-plane_point_1));
+    plane_d = -glm::dot(plane_normal, plane_point_1);
+
     std::cout << "\tplane normal:             " << plane_normal << ", plane offset: " << plane_d << std::endl;
 
-    // TODO swap plane_normal y,z components
+    //swap plane_normal y,z components
+    std::swap(plane_normal.y, plane_normal.z);
 
     std::cout << "\tswizzled plane normal:    " << plane_normal << std::endl;
 
@@ -48,10 +52,17 @@ void taskA()
     float3 ray_dir_cudafloat3 = make_float3(2, 4, 3);
 
     float3 intersection_cudafloat3;
-    // TOOD:
+     
     // - convert ray parameters to GLM vectors using cuda2glm() function.
     // - implement ray-plane intersection.
     // - convert intersection point back to float3 type using glm2cuda() function.
+
+    glm::vec3 ray_origin = cuda2glm(ray_origin_cudafloat3);
+    glm::vec3 ray_dir = cuda2glm(ray_dir_cudafloat3);
+
+    float t = (glm::dot(plane_normal, ray_origin) + plane_d) / glm::dot(plane_normal, ray_dir);
+    glm::vec3 intersection = ray_origin + t * ray_dir;
+    intersection_cudafloat3 = glm2cuda(intersection);
 
     std::cout << "\tray-plane intersection at (" << intersection_cudafloat3.x << " " << intersection_cudafloat3.y << " " << intersection_cudafloat3.z << ")" << std::endl;
 }
