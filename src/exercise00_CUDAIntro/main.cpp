@@ -156,10 +156,12 @@ void taskC()
     // Each color channel stores a single uint8_t (or unsigned char) value per pixel.
     OPG_CHECK(channelSize == 1);
 
+    int numPixel = imageData.width * imageData.height;
+
     //convert to grayscale
     if(channelCount == 3){
-        std::vector<unsigned char> data_grayscale(imageData.width * imageData.height, 0);
-        for (int i = 0; i < imageData.width * imageData.height; i++) {
+        std::vector<unsigned char> data_grayscale(numPixel, 0);
+        for (int i = 0; i < numPixel; i++) {
             float R = static_cast<float>(imageData.data[i * 3]);
             float G = static_cast<float>(imageData.data[i * 3 + 1]);
             float B = static_cast<float>(imageData.data[i * 3 + 2]);
@@ -172,59 +174,59 @@ void taskC()
 
     //copy to gpu
     unsigned char* d_imageData;
-    cudaMalloc(&d_imageData, imageData.width * imageData.height * sizeof(unsigned char));
-    cudaMemcpy(d_imageData, imageData.data.data(), imageData.width * imageData.height * sizeof(unsigned char), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_imageData, numPixel * sizeof(unsigned char));
+    cudaMemcpy(d_imageData, imageData.data.data(), numPixel * sizeof(unsigned char), cudaMemcpyHostToDevice);
 
     //apply convolution G_x
-    std::vector<int> g_x(imageData.width * imageData.height, 0);
+    std::vector<int> g_x(numPixel, 0);
     int* d_g_x;
-    cudaMalloc(&d_g_x, imageData.width * imageData.height * sizeof(int));
-    cudaMemcpy(d_g_x, g_x.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_g_x, numPixel * sizeof(int));
+    cudaMemcpy(d_g_x, g_x.data(), numPixel * sizeof(int), cudaMemcpyHostToDevice);
 
     int kernel_size = 3;
     std::vector<int> kernel_x {-1,0,1,-2,0,2,-1,0,1};
     int* d_kernel_x;
-    cudaMalloc(&d_kernel_x, imageData.width * imageData.height * sizeof(int));
-    cudaMemcpy(d_kernel_x, kernel_x.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_kernel_x, kernel_size * kernel_size * sizeof(int));
+    cudaMemcpy(d_kernel_x, kernel_x.data(), kernel_size * kernel_size * sizeof(int), cudaMemcpyHostToDevice);
 
     launchConvolution2D(d_imageData, d_kernel_x, d_g_x, imageData.width, imageData.height, kernel_size);
 
-    cudaMemcpy(g_x.data(), d_g_x, imageData.width * imageData.height * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(g_x.data(), d_g_x, numPixel * sizeof(int), cudaMemcpyDeviceToHost);
 
     cudaFree(d_g_x);
     cudaFree(d_kernel_x);
 
     //apply convolution G_y
-    std::vector<int> g_y(imageData.width * imageData.height, 0);
+    std::vector<int> g_y(numPixel, 0);
     int* d_g_y;
-    cudaMalloc(&d_g_y, imageData.width * imageData.height * sizeof(int));
-    cudaMemcpy(d_g_y, g_y.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_g_y, numPixel * sizeof(int));
+    cudaMemcpy(d_g_y, g_y.data(), numPixel * sizeof(int), cudaMemcpyHostToDevice);
 
     kernel_size = 3;
     std::vector<int> kernel_y {-1,-2,-1,0,0,0,1,2,1};
     int* d_kernel_y;
-    cudaMalloc(&d_kernel_y, imageData.width * imageData.height * sizeof(int));
-    cudaMemcpy(d_kernel_y, kernel_y.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMalloc(&d_kernel_y, kernel_size * kernel_size * sizeof(int));
+    cudaMemcpy(d_kernel_y, kernel_y.data(), kernel_size * kernel_size * sizeof(int), cudaMemcpyHostToDevice);
 
     launchConvolution2D(d_imageData, d_kernel_y, d_g_y, imageData.width, imageData.height, kernel_size);
 
-    cudaMemcpy(g_y.data(), d_g_y, imageData.width * imageData.height * sizeof(int), cudaMemcpyDeviceToHost);
+    cudaMemcpy(g_y.data(), d_g_y, numPixel * sizeof(int), cudaMemcpyDeviceToHost);
 
     cudaFree(d_g_y);
     cudaFree(d_kernel_y);
     cudaFree(d_imageData);
 
     //gradient magnitude
-    std::vector<int> G(imageData.width * imageData.height, 0);
-    for (int i = 0; i < imageData.width * imageData.height; i++) {
+    std::vector<int> G(numPixel, 0);
+    for (int i = 0; i < numPixel; i++) {
         G[i] = static_cast<int>(sqrt(g_x[i] * g_x[i] + g_y[i] * g_y[i]));
     }
 
     //convert to image data (normalize G, map to range 0-255)
-    std::vector<unsigned char> G_norm(imageData.width * imageData.height, 0);
+    std::vector<unsigned char> G_norm(numPixel, 0);
     auto max = std::max_element(G.begin(), G.end());
-    for (int i = 0; i < imageData.width * imageData.height; i++) {
-        G_norm[i] = static_cast<unsigned char>(std::clamp((G[i] / *max) * 255, 0, 255));
+    for (int i = 0; i < numPixel; i++) {
+        G_norm[i] = static_cast<unsigned char>(std::clamp((static_cast<float>(G[i]) / static_cast<float>(*max)) * 255.0, 0.0, 255.0));
     }
     imageData.data.assign(G_norm.begin(), G_norm.end());
 

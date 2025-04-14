@@ -14,13 +14,6 @@
 // The following custom pragma notifies our build system that this file should be compiled into a "normal" .obj file.
 #pragma cuda_source_property_format = OBJ
 
-void launchVecMulConst(int* dataArray, int N, int constant){
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
-    vecMulConst<<<blocksPerGrid, threadsPerBlock>>>(dataArray, N, constant);
-    CUDA_SYNC_CHECK(); 
-}
-
 __global__ void vecMulConst(int* dataArray, int N, int constant)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
@@ -28,14 +21,13 @@ __global__ void vecMulConst(int* dataArray, int N, int constant)
         dataArray[i] *= constant;
 }
 
-void launchConvolution2D(const unsigned char* image, const int* kernel, int* output, int image_width, int image_height, int kernel_size){
+void launchVecMulConst(int* dataArray, int N, int constant){
     int threadsPerBlock = 256;
-    int blocksPerGrid = (image_width * image_height + threadsPerBlock - 1) / threadsPerBlock;
-    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(image, kernel, output, image_width, image_height, kernel_size);
+    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+    vecMulConst<<<blocksPerGrid, threadsPerBlock>>>(dataArray, N, constant);
     CUDA_SYNC_CHECK(); 
 }
  
-
 __global__ void convolution2D(const unsigned char* image, const int* kernel, int* output, int image_width, int image_height, int kernel_size)
 {
     //pixel index of flattened image
@@ -60,6 +52,13 @@ __global__ void convolution2D(const unsigned char* image, const int* kernel, int
 
         output[index] = sum;
     }
+}
+
+void launchConvolution2D(const unsigned char* image, const int* kernel, int* output, int image_width, int image_height, int kernel_size){
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (image_width * image_height + threadsPerBlock - 1) / threadsPerBlock;
+    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(image, kernel, output, image_width, image_height, kernel_size);
+    CUDA_SYNC_CHECK(); 
 }
 
 __global__ void generateRandom(float* out, uint32_t n) {
