@@ -5,7 +5,7 @@
 macro(OPG_CUDA_SOURCE_PROPERTY_FORMAT_FROM_PRAGMA)
 foreach(source_file ${ARGN})
   # Define the pragma we use to determine the value of CUDA_SOURCE_PROPERTY_FORMAT
-  set(pragma_expression "^[ \t]*#[ \t]*pragma[ \t]+cuda_source_property_format=([a-z,A-Z]+)[ \t]*$")
+  set(pragma_expression "^[ \t]*#[ \t]*pragma[ \t]+cuda_source_property_format[ \t]*=[ \t]*([a-zA-Z]+)[ \t]*$")
   # Process any *.cu source files
   if(${source_file} MATCHES "\\.cu$")
     # Read all lines from the source file defining the pragma we are looking for.
