@@ -141,6 +141,84 @@ void taskC()
     // Each color channel stores a single uint8_t (or unsigned char) value per pixel.
     OPG_CHECK(channelSize == 1);
 
+    //convert to grayscale
+    if(channelCount == 3){
+        std::vector<unsigned char> data_grayscale(imageData.width * imageData.height, 0);
+        for (int i = 0; i < imageData.width * imageData.height; i++) {
+            float R = static_cast<float>(imageData.data[i * 3]);
+            float G = static_cast<float>(imageData.data[i * 3 + 1]);
+            float B = static_cast<float>(imageData.data[i * 3 + 2]);
+            float grayValue = 0.2989f * R + 0.5870f * G + 0.1140f * B;
+            data_grayscale[i] = static_cast<unsigned char>(grayValue);
+        }
+        imageData.data.assign(data_grayscale.begin(), data_grayscale.end());
+        imageData.format = ImageFormat::FORMAT_R_UINT8;
+    }
+
+    //copy to gpu
+    unsigned char* d_imageData;
+    cudaMalloc(&d_imageData, imageData.width * imageData.height * sizeof(unsigned char));
+    cudaMemcpy(d_imageData, imageData.data.data(), imageData.width * imageData.height * sizeof(unsigned char), cudaMemcpyHostToDevice);
+
+    //apply convolution G_x
+    std::vector<int> g_x(imageData.width * imageData.height, 0);
+    int* d_g_x;
+    cudaMalloc(&d_g_x, imageData.width * imageData.height * sizeof(int));
+    cudaMemcpy(d_g_x, g_x.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+
+    int kernel_size = 3;
+    std::vector<int> kernel_x {-1,0,1,-2,0,2,-1,0,1};
+    int* d_kernel_x;
+    cudaMalloc(&d_kernel_x, imageData.width * imageData.height * sizeof(int));
+    cudaMemcpy(d_kernel_x, kernel_x.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (imageData.width * imageData.height + threadsPerBlock - 1) / threadsPerBlock;
+    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(d_imageData, d_kernel_x, d_g_x, imageData.width, imageData.height, kernel_size);
+
+    cudaMemcpy(g_x.data(), d_g_x, imageData.width * imageData.height * sizeof(int), cudaMemcpyDeviceToHost);
+
+    cudaFree(d_g_x);
+    cudaFree(d_kernel_x);
+
+    CUDA_SYNC_CHECK();
+
+    //apply convolution G_y
+    std::vector<int> g_y(imageData.width * imageData.height, 0);
+    int* d_g_y;
+    cudaMalloc(&d_g_y, imageData.width * imageData.height * sizeof(int));
+    cudaMemcpy(d_g_y, g_y.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+
+    int kernel_size = 3;
+    std::vector<int> kernel_y {-1,-2,-1,0,0,0,1,2,1};
+    int* d_kernel_y;
+    cudaMalloc(&d_kernel_y, imageData.width * imageData.height * sizeof(int));
+    cudaMemcpy(d_kernel_y, kernel_y.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
+
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (imageData.width * imageData.height + threadsPerBlock - 1) / threadsPerBlock;
+    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(d_imageData, d_kernel_y, d_g_y, imageData.width, imageData.height, kernel_size);
+
+    cudaMemcpy(g_y.data(), d_g_y, imageData.width * imageData.height * sizeof(int), cudaMemcpyDeviceToHost);
+
+    cudaFree(d_g_y);
+    cudaFree(d_kernel_y);
+    cudaFree(d_imageData);
+
+    //gradient magnitude
+    std::vector<int> G(imageData.width * imageData.height, 0);
+    for (int i = 0; i < imageData.width * imageData.height; i++) {
+        G = static_cast<int>(sqrt(g_x[i] * g_x[i] + g_y[i] * g_y[i]));
+    }
+
+    //convert to image data (normalize G, map to range 0-255)
+    std::vector<unsigned char> G_norm(imageData.width * imageData.height, 0);
+    auto max = std::max_element(G.begin(), G.end());
+    for (int i = 0; i < imageData.width * imageData.height; i++) {
+        G_norm[i] = static_cast<unsigned char>(std::clamp((G[i] / max) * 255, 0, 255));
+    }
+    imageData.data.assign(G_norm.begin(), G_norm.end());
+
     // Write your solution back into the imageData.data array such that we can safe it as an image again
     opg::writeImagePNG("taskC_output.png", imageData);
 }

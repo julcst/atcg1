@@ -18,3 +18,29 @@ __global__ void VecMulConst(int* dataArray, int N, int constant)
     if (i < N)
         dataArray[i] *= constant;
 }
+
+__global__ void convolution2D(const unsigned char* image, const int* kernel, int* output, int image_width, int image_height, int kernel_size)
+{
+    //pixel index of flattened image
+    int index = blockIdx.x * blockDim.x + threadIdx.x;
+
+    if (index < image_width * image_height) {
+        int kernel_radius = kernel_size / 2;
+        int row = index / image_width;
+        int col = index % image_width;
+        int sum = 0;
+        for (int ky = -kernel_radius; ky <= kernel_radius; ++ky) {
+            for (int kx = -kernel_radius; kx <= kernel_radius; ++kx) {
+                //index of neighbor pixel
+                int n_row = min(max(row + ky, 0), height - 1);
+                int n_col = min(max(col + kx, 0), width - 1);
+                int n_index = n_row * width + n_col;
+
+                //perform convolution
+                sum += input[n_index] * kernel[(ky + kernel_radius) * kernel_size + (kx + kernel_radius)];
+            }
+        }
+
+        output[index] = sum;
+    }
+}
