@@ -241,8 +241,10 @@ void taskD()
      */
 
     float threshold = 0.5f;
-    int totalCount = 10000000;
-    int aboveThresholdCount = 0; // compute this value
+    uint32_t totalCount = 10000000;
+    uint32_t aboveThresholdCount = 0;
+
+    sampleBernoulli(&aboveThresholdCount, threshold, totalCount);
 
     std::cout << "taskD output:" << std::endl;
     std::cout << "\t" << aboveThresholdCount << "/" << totalCount << " values are greater than " << threshold << std::endl;
@@ -284,6 +286,8 @@ void taskE()
     // 40059, 27133, 23270,
     // 39432, 28626, 26127,
     // 40192, 26453, 26179
+
+    matrixMultiply(lhs.data(), lhsRows, lhsCols, rhs.data(), rhsRows, rhsCols, output.data(), outputRows, outputCols);
 
     std::cout << "taskE output:" << std::endl;
     for (int r = 0; r < outputRows; ++r)

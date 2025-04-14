@@ -8,7 +8,6 @@ In case you want to update the headers, you need to add `OPTIX_STUBS_API` to the
 ```
 OPTIX_STUBS_API extern OptixFunctionTable g_optixFunctionTable;
 ```
-Note: It seems like on Windows this is not necessary. If you are on Linux, try both versions!
 
 Also don't include optix_stubs.h directly, but use our wrapper `opg/opg_optix_stubs.h`.
 This is required to use a shared instance of the `g_optixFunctionTable` across DLL boundaries!
