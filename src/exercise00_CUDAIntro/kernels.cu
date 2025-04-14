@@ -2,7 +2,9 @@
 #include "opg/hostdevice/random.h"
 #include "opg/glmwrapper.h"
 #include "opg/hostdevice/misc.h"
+#include "opg/exception.h"
 #include <cstdint>
+#include <cstdio>
 
 #include "kernels.h"
 
@@ -12,12 +14,27 @@
 // The following custom pragma notifies our build system that this file should be compiled into a "normal" .obj file.
 #pragma cuda_source_property_format = OBJ
 
-__global__ void VecMulConst(int* dataArray, int N, int constant)
+void launchVecMulConst(int* dataArray, int N, int constant){
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
+    vecMulConst<<<blocksPerGrid, threadsPerBlock>>>(dataArray, N, constant);
+    CUDA_SYNC_CHECK(); 
+}
+
+__global__ void vecMulConst(int* dataArray, int N, int constant)
 {
     int i = blockDim.x * blockIdx.x + threadIdx.x;
     if (i < N)
         dataArray[i] *= constant;
 }
+
+void launchConvolution2D(const unsigned char* image, const int* kernel, int* output, int image_width, int image_height, int kernel_size){
+    int threadsPerBlock = 256;
+    int blocksPerGrid = (image_width * image_height + threadsPerBlock - 1) / threadsPerBlock;
+    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(image, kernel, output, image_width, image_height, kernel_size);
+    CUDA_SYNC_CHECK(); 
+}
+ 
 
 __global__ void convolution2D(const unsigned char* image, const int* kernel, int* output, int image_width, int image_height, int kernel_size)
 {
@@ -32,12 +49,12 @@ __global__ void convolution2D(const unsigned char* image, const int* kernel, int
         for (int ky = -kernel_radius; ky <= kernel_radius; ++ky) {
             for (int kx = -kernel_radius; kx <= kernel_radius; ++kx) {
                 //index of neighbor pixel
-                int n_row = min(max(row + ky, 0), height - 1);
-                int n_col = min(max(col + kx, 0), width - 1);
-                int n_index = n_row * width + n_col;
+                int n_row = min(max(row + ky, 0), image_height - 1);
+                int n_col = min(max(col + kx, 0), image_width - 1);
+                int n_index = n_row * image_width + n_col;
 
                 //perform convolution
-                sum += input[n_index] * kernel[(ky + kernel_radius) * kernel_size + (kx + kernel_radius)];
+                sum += image[n_index] * kernel[(ky + kernel_radius) * kernel_size + (kx + kernel_radius)];
             }
         }
 

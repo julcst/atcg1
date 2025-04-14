@@ -54,3 +54,7 @@ CTestTestfile.cmake
 _deps
 
 .vscode/
+bin/
+build/
+lib/
+external/OptiX/include/

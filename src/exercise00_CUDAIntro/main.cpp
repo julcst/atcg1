@@ -1,6 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 
 #include <cuda_runtime.h>
 
@@ -91,14 +92,28 @@ void taskB()
     // fill the vector with the numbers 1 to N
     std::iota(dataArray.begin(), dataArray.end(), 1);
 
+    //print input
+    std::cout << "taskB input:" << std::endl;
+    std::cout << "\tfirst 10 entries:";
+    for (int i = 0; i < std::min<int>(dataArray.size(), 10); ++i)
+    {
+        std::cout << " " << dataArray[i];
+    }
+    std::cout << std::endl;
+    std::cout << "\tlast 10 entries:";
+    for (int i = std::max<int>(dataArray.size() - 10, 0); i < dataArray.size(); ++i)
+    {
+        std::cout << " " << dataArray[i];
+    }
+    std::cout << std::endl;
+    //
+
     //copy vector to gpu
     cudaMalloc(&d_dataArray, N * sizeof(int));
     cudaMemcpy(d_dataArray, dataArray.data(), N * sizeof(int), cudaMemcpyHostToDevice);
 
     //kernel call
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
-    VecMulConst<<<blocksPerGrid, threadsPerBlock>>>(d_dataArray, N, constant);
+    launchVecMulConst(d_dataArray, N, constant);
 
     //copy back from gpu to host
     cudaMemcpy(dataArray.data(), d_dataArray, N * sizeof(int), cudaMemcpyDeviceToHost);
@@ -152,7 +167,7 @@ void taskC()
             data_grayscale[i] = static_cast<unsigned char>(grayValue);
         }
         imageData.data.assign(data_grayscale.begin(), data_grayscale.end());
-        imageData.format = ImageFormat::FORMAT_R_UINT8;
+        imageData.format = opg::ImageFormat::FORMAT_R_UINT8;
     }
 
     //copy to gpu
@@ -172,16 +187,12 @@ void taskC()
     cudaMalloc(&d_kernel_x, imageData.width * imageData.height * sizeof(int));
     cudaMemcpy(d_kernel_x, kernel_x.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (imageData.width * imageData.height + threadsPerBlock - 1) / threadsPerBlock;
-    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(d_imageData, d_kernel_x, d_g_x, imageData.width, imageData.height, kernel_size);
+    launchConvolution2D(d_imageData, d_kernel_x, d_g_x, imageData.width, imageData.height, kernel_size);
 
     cudaMemcpy(g_x.data(), d_g_x, imageData.width * imageData.height * sizeof(int), cudaMemcpyDeviceToHost);
 
     cudaFree(d_g_x);
     cudaFree(d_kernel_x);
-
-    CUDA_SYNC_CHECK();
 
     //apply convolution G_y
     std::vector<int> g_y(imageData.width * imageData.height, 0);
@@ -189,15 +200,13 @@ void taskC()
     cudaMalloc(&d_g_y, imageData.width * imageData.height * sizeof(int));
     cudaMemcpy(d_g_y, g_y.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
 
-    int kernel_size = 3;
+    kernel_size = 3;
     std::vector<int> kernel_y {-1,-2,-1,0,0,0,1,2,1};
     int* d_kernel_y;
     cudaMalloc(&d_kernel_y, imageData.width * imageData.height * sizeof(int));
     cudaMemcpy(d_kernel_y, kernel_y.data(), imageData.width * imageData.height * sizeof(int), cudaMemcpyHostToDevice);
 
-    int threadsPerBlock = 256;
-    int blocksPerGrid = (imageData.width * imageData.height + threadsPerBlock - 1) / threadsPerBlock;
-    convolution2D<<<blocksPerGrid, threadsPerBlock>>>(d_imageData, d_kernel_y, d_g_y, imageData.width, imageData.height, kernel_size);
+    launchConvolution2D(d_imageData, d_kernel_y, d_g_y, imageData.width, imageData.height, kernel_size);
 
     cudaMemcpy(g_y.data(), d_g_y, imageData.width * imageData.height * sizeof(int), cudaMemcpyDeviceToHost);
 
@@ -208,14 +217,14 @@ void taskC()
     //gradient magnitude
     std::vector<int> G(imageData.width * imageData.height, 0);
     for (int i = 0; i < imageData.width * imageData.height; i++) {
-        G = static_cast<int>(sqrt(g_x[i] * g_x[i] + g_y[i] * g_y[i]));
+        G[i] = static_cast<int>(sqrt(g_x[i] * g_x[i] + g_y[i] * g_y[i]));
     }
 
     //convert to image data (normalize G, map to range 0-255)
     std::vector<unsigned char> G_norm(imageData.width * imageData.height, 0);
     auto max = std::max_element(G.begin(), G.end());
     for (int i = 0; i < imageData.width * imageData.height; i++) {
-        G_norm[i] = static_cast<unsigned char>(std::clamp((G[i] / max) * 255, 0, 255));
+        G_norm[i] = static_cast<unsigned char>(std::clamp((G[i] / *max) * 255, 0, 255));
     }
     imageData.data.assign(G_norm.begin(), G_norm.end());
 
