@@ -126,12 +126,24 @@ std::pair<opg::ImageData, std::vector<std::vector<float>>> robertson(const std::
 
         for (size_t iteration = 0; iteration < max_iterations; iteration++)
         {
-            // TODO:
             // 1. reset/initialize your buffers for this iteration
             // 2. calculate the irradiance estimate
             // 3. calculate the new inverse CRF estimate
             // 4. normalize the inverse CRF
-//
+
+            cudaMemset( x_nom_buffer.data(), 0, width * height * sizeof(float));
+            cudaMemset( x_denom_buffer.data(), 0, width * height * sizeof(float));
+            cudaMemset( I_unnorm_buffer.data(), 0, 256 * sizeof(float));
+
+            CUDA_SYNC_CHECK();
+            calcX( channel_buffers[i].data(), underexposed_buffer.data(), exposures_buffer.data(), I_buffer.data(), weights_buffer.data(), x_nom_buffer.data(), x_denom_buffer.data(), x_buffer.data(), number_imgs * width * height, width * height );
+            CUDA_SYNC_CHECK();
+            estimateI( channel_buffers[i].data(), underexposed_buffer.data(), x_buffer.data(), exposures_buffer.data(), I_unnorm_buffer.data(), number_imgs * width * height, width * height );
+            CUDA_SYNC_CHECK();
+            normalizeI( I_unnorm_buffer.data(), I_buffer.data(), counters_buffer.data() );
+            CUDA_SYNC_CHECK();
+            normInvCrf( I_buffer.data(), 256 );
+            CUDA_SYNC_CHECK();
         }
 
         // copy results for this channel to not overwrite them with next channel results

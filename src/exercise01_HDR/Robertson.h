@@ -24,7 +24,8 @@ void calcWeights(uint8_t* values, float* weights, uint32_t number_values);
 void initInvCrf(float* I, uint32_t number_values);
 void normInvCrf(float* I, uint32_t number_values);
 
-// TODO: declare your functions here
-//
+void calcX(const uint8_t* values, const bool* underexposed, const float* exposures, const float* I, const float* weights,float* x_nom, float* x_denom, float* x, uint32_t number_values, uint32_t values_per_image );
+void estimateI(const uint8_t* values, const bool* underxposed, const float* x, const float* exposures, float* I_unnorm, uint32_t number_values, uint32_t values_per_image);
+void normalizeI(const float* I_unnorm, float* I, const uint32_t* counters);
 
 std::pair<opg::ImageData, std::vector<std::vector<float>>> robertson(const std::vector<opg::ImageData> &imgs, const std::vector<float> &exposures, size_t max_iterations = 10);

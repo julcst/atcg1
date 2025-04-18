@@ -114,8 +114,100 @@ __global__ void initInvCrfKernel(float* I, uint32_t number_values)
     I[gid] = float(gid);
 }
 
-// TODO: put your CUDA kernels and the host functions which launch the kernels here
-//
+__global__ void calcXPartKernel(const uint8_t* values, const bool* underexposed, const float* exposures, const float* I, const float* weights, float* x_nom, float* x_denom, const uint32_t values_per_image, const uint32_t number_imgs)
+{
+    const uint32_t idx = threadIdx.x + blockIdx.x * blockDim.x;
+
+    if (idx >= values_per_image * 2)
+    {
+        return;
+    }
+
+    if ( idx < values_per_image )
+    {
+        uint32_t j = idx;
+        if (underexposed[j])
+            return;
+        for ( size_t i = 0; i < number_imgs; i++ )
+        {
+            size_t ij = i * values_per_image + j;
+            x_nom[j] += weights[ij] * exposures[i] * I[values[ij]];
+        }
+    } else {
+        uint32_t j = idx - values_per_image;
+        if (underexposed[j]) {
+            return;
+        }
+        for (size_t i = 0; i < number_imgs; i++)
+        {
+            size_t ij = i * values_per_image + j;
+            x_denom[j] += weights[ij] * exposures[i] * exposures[i];
+        }
+    }
+}
+
+__global__ void calcXKernel(const bool* underexposed, const float* x_nom, const float* x_denom, float* x, const uint32_t values_per_image)
+{
+    const uint32_t j = threadIdx.x + blockIdx.x * blockDim.x;
+    if (j >= values_per_image)
+    {
+        return;
+    }
+
+    x[j] = x_nom[j] / x_denom[j];
+}
+
+__global__ void estimateIKernel(const uint8_t* values, const bool* underexposed, const float* x, const float* exposures, float* I_unnorm, uint32_t number_values, uint32_t values_per_image)
+{
+    int gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_values)
+        return;
+
+    uint8_t val = values[gid];
+    uint32_t j = gid % values_per_image;
+    uint32_t i = gid / values_per_image;
+
+    if (underexposed[j])
+        return;
+
+    float contribution = exposures[i] * x[j];
+    atomicAdd(&I_unnorm[val], contribution);
+}
+
+__global__ void normalizeIKernel(const float* I_unnorm, const uint32_t* counters, float* I)
+{
+    int m = threadIdx.x + blockIdx.x * blockDim.x;
+    if (m >= 256)
+        return;
+
+    uint32_t count = counters[m];
+    float sum = I_unnorm[m];
+    I[m] = sum / ((count == 0) ? 1.f : float(count));
+}
+
+void calcX(const uint8_t* values, const bool* underexposed, const float* exposures, const float* I, const float* weights,float* x_nom, float* x_denom, float* x, uint32_t number_values, uint32_t values_per_image )
+{
+    const int block_size = 512;
+    const int block_count = ceil_div<int>(values_per_image, block_size); // Spawn enough blocks
+    const int number_imgs = number_values / values_per_image;
+    calcXPartKernel<<<block_count, block_size * 2>>>(values, underexposed, exposures, I, weights, x_nom, x_denom, values_per_image, number_imgs);
+    cudaDeviceSynchronize();
+    calcXKernel<<<block_count, block_size>>>(underexposed, x_nom, x_denom, x, values_per_image);
+}
+
+void estimateI(const uint8_t* values, const bool* underexposed, const float* x, const float* exposures, float* I_unnorm, const uint32_t number_values, const uint32_t values_per_image)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>(number_values, block_size); // Spawn enough blocks
+    estimateIKernel<<<block_count, block_size>>>(values, underexposed, x, exposures, I_unnorm, number_values, values_per_image);
+}
+
+void normalizeI(const float* I_unnorm, float* I, const uint32_t* counters)
+{
+    const int block_size  = 256;
+    const int block_count = 1;
+    normalizeIKernel<<<block_count, block_size>>>(I_unnorm, counters, I);
+}
 
 void splitChannels(glm::u8vec3* pixels, uint8_t* red, uint8_t* green, uint8_t* blue, int number_pixels)
 {
