@@ -131,7 +131,7 @@ __global__ void calcXPartKernel(const uint8_t* values, const bool* underexposed,
         for ( size_t i = 0; i < number_imgs; i++ )
         {
             size_t ij = i * values_per_image + j;
-            x_nom[j] += weights[ij] * exposures[i] * I[values[ij]];
+            atomicAdd( &x_nom[j], weights[ij] * exposures[i] * I[values[ij]] );
         }
     } else {
         uint32_t j = idx - values_per_image;
@@ -141,7 +141,7 @@ __global__ void calcXPartKernel(const uint8_t* values, const bool* underexposed,
         for (size_t i = 0; i < number_imgs; i++)
         {
             size_t ij = i * values_per_image + j;
-            x_denom[j] += weights[ij] * exposures[i] * exposures[i];
+            atomicAdd(&x_denom[j], weights[ij] * exposures[i] * exposures[i] );
         }
     }
 }
@@ -149,7 +149,7 @@ __global__ void calcXPartKernel(const uint8_t* values, const bool* underexposed,
 __global__ void calcXKernel(const bool* underexposed, const float* x_nom, const float* x_denom, float* x, const uint32_t values_per_image)
 {
     const uint32_t j = threadIdx.x + blockIdx.x * blockDim.x;
-    if (j >= values_per_image)
+    if (j >= values_per_image || underexposed[j])
     {
         return;
     }

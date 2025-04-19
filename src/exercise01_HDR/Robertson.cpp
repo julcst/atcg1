@@ -130,7 +130,7 @@ std::pair<opg::ImageData, std::vector<std::vector<float>>> robertson(const std::
             // 2. calculate the irradiance estimate
             // 3. calculate the new inverse CRF estimate
             // 4. normalize the inverse CRF
-
+            cudaMemset( x_buffer.data(), 0, width * height * sizeof(float));
             cudaMemset( x_nom_buffer.data(), 0, width * height * sizeof(float));
             cudaMemset( x_denom_buffer.data(), 0, width * height * sizeof(float));
             cudaMemset( I_unnorm_buffer.data(), 0, 256 * sizeof(float));
