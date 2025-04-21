@@ -336,3 +336,31 @@ void convertFloatToUint8(float* hdr, uint8_t* ldr, uint32_t number_values)
     const int block_count = ceil_div<int>( number_values, block_size ); // Spawn enough blocks
     convertFloatToUint8Kernel<<<block_count, block_size>>>(hdr, ldr, number_values);
 }
+
+__global__ void multiplyByScalarKernel(glm::vec3* values, float scalar, uint32_t number_values)
+{
+    const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_values) return;
+    values[gid] *= scalar;
+}
+
+void multiplyByScalar(glm::vec3* values, float scalar, uint32_t number_values)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>( number_values, block_size ); // Spawn enough blocks
+    multiplyByScalarKernel<<<block_count, block_size>>>(values, scalar, number_values);
+}
+
+__global__ void powerKernel(glm::vec3* values, float exponent, uint32_t number_values)
+{
+    const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_values) return;
+    values[gid] = glm::pow(values[gid], glm::vec3(exponent));
+}
+
+void powerByScalar(glm::vec3* values, float exponent, uint32_t number_values)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>( number_values, block_size ); // Spawn enough blocks
+    powerKernel<<<block_count, block_size>>>(values, exponent, number_values);
+}

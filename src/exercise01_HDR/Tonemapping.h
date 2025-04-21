@@ -21,5 +21,8 @@ void boxFilterRgb(glm::vec3 *hdr_rgb_in, glm::vec3 *hdr_rgb_out, uint32_t filter
 void convertRgbToHsvBrightness(glm::vec3* rgb, glm::vec3* hsv, uint32_t number_pixels);
 void convertHsvToRgb(glm::vec3* hsv, glm::vec3* rgb, uint32_t number_pixels);
 
+void multiplyByScalar(glm::vec3* values, float scalar, uint32_t number_values);
+void powerByScalar(glm::vec3* values, float exponent, uint32_t number_values);
+
 // TODO: declare your functions here
 //

@@ -62,17 +62,26 @@ opg::ImageData tonemapImage(const opg::ImageData& img, const std::string& mode)
     if (mode == "linear_max")
     {
         // TODO: implement linear tone mapping with maximum color value as scaling factor
-//
+        opg::DeviceBuffer<glm::vec3> hsv_img_buffer(img.width * img.height);
+        convertRgbToHsvBrightness(rgb_img_buffer.data(), hsv_img_buffer.data(), img.width * img.height);
+
+        opg::DeviceBuffer<float> max_buffer(1);
+        opg::DeviceBuffer<float> min_buffer(1);
+        brightnessMinMax(hsv_img_buffer.data(), min_buffer.data(), max_buffer.data(), img.width * img.height);
+        float max;
+        max_buffer.download(&max);
+
+        multiplyByScalar(rgb_img_buffer.data(), 1.0f / max, img.width * img.height);
     }
     else if (mode == "linear_fixed")
     {
         // TODO: implement linear tone mapping with hand picked scaling factor
-//
+        multiplyByScalar(rgb_img_buffer.data(), 0.5f, img.width * img.height);
     }
     else if (mode == "gamma_fixed")
     {
         // TODO: implement gamm tone mapping with hand picked gamma
-//
+        powerByScalar(rgb_img_buffer.data(), 1.0f / 2.2f, img.width * img.height);
     }
     else if (mode == "histogram")
     {
