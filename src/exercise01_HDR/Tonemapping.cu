@@ -351,6 +351,20 @@ void multiplyByScalar(glm::vec3* values, float scalar, uint32_t number_values)
     multiplyByScalarKernel<<<block_count, block_size>>>(values, scalar, number_values);
 }
 
+__global__ void multiplyByScalarKernel(uint32_t* in, float* out, float scalar, uint32_t number_values)
+{
+    const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_values) return;
+    out[gid] = in[gid] * scalar;
+}
+
+void multiplyByScalar(uint32_t* in, float* out, float scalar, uint32_t number_values)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>( number_values, block_size ); // Spawn enough blocks
+    multiplyByScalarKernel<<<block_count, block_size>>>(in, out, scalar, number_values);
+}
+
 __global__ void powerKernel(glm::vec3* values, float exponent, uint32_t number_values)
 {
     const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
@@ -363,4 +377,65 @@ void powerByScalar(glm::vec3* values, float exponent, uint32_t number_values)
     const int block_size  = 512; // 512 is a size that works well with modern GPUs.
     const int block_count = ceil_div<int>( number_values, block_size ); // Spawn enough blocks
     powerKernel<<<block_count, block_size>>>(values, exponent, number_values);
+}
+
+__global__ void computeHistogramKernel(glm::vec3* hsv, uint32_t* bins, float min, float max, uint32_t number_bins, uint32_t number_pixels)
+{
+    const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_pixels) return;
+
+    glm::vec3 pixel = hsv[gid];
+    float v = pixel.z;
+    float bin_size = (max - min) / number_bins;
+    uint32_t bin_idx = static_cast<uint32_t>((v - min) / bin_size);
+    bin_idx = glm::clamp(bin_idx, 0u, number_bins - 1);
+    atomicAdd(&bins[bin_idx], 1);
+}
+
+void computeHistogram(glm::vec3* hsv, uint32_t* bins, float min, float max, uint32_t number_bins, uint32_t number_pixels)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>( number_pixels, block_size ); // Spawn enough blocks
+    computeHistogramKernel<<<block_count, block_size>>>(hsv, bins, min, max, number_bins, number_pixels);
+}
+
+__global__ void cumulateKernel(uint32_t* bins, uint32_t* cum_bins, uint32_t number_bins)
+{
+    const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_bins) return;
+
+    uint32_t sum = 0;
+    for (uint32_t i = 0; i <= gid; i++)
+    {
+        sum += bins[i];
+    }
+    cum_bins[gid] = sum; // Does it make sense to do this in parallel? Wouldn't sequential CPU be better?
+}
+
+void cumulate(uint32_t* bins, uint32_t* cum_bins, uint32_t number_bins)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>( number_bins, block_size ); // Spawn enough blocks
+    cumulateKernel<<<block_count, block_size>>>(bins, cum_bins, number_bins);
+}
+
+__global__ void histogramEqualizationKernel(glm::vec3* hsv, float* cdf, float min, float max, uint32_t number_bins, uint32_t number_pixels)
+{
+    const uint32_t gid = threadIdx.x + blockIdx.x * blockDim.x;
+    if (gid >= number_pixels) return;
+
+    glm::vec3 pixel = hsv[gid];
+    float v = pixel.z;
+    float bin_size = (max - min) / number_bins;
+    uint32_t bin_idx = static_cast<uint32_t>((v - min) / bin_size);
+    bin_idx = glm::clamp(bin_idx, 0u, number_bins - 1);
+    pixel.z = static_cast<float>(cdf[bin_idx]);
+    hsv[gid] = pixel;
+}
+
+void histogramEqualization(glm::vec3* hsv, float* cdf, float min, float max, uint32_t number_bins, uint32_t number_pixels)
+{
+    const int block_size  = 512; // 512 is a size that works well with modern GPUs.
+    const int block_count = ceil_div<int>( number_pixels, block_size ); // Spawn enough blocks
+    histogramEqualizationKernel<<<block_count, block_size>>>(hsv, cdf, min, max, number_bins, number_pixels);
 }

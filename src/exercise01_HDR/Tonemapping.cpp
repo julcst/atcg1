@@ -64,24 +64,29 @@ opg::ImageData tonemapImage(const opg::ImageData& img, const std::string& mode)
         // TODO: implement linear tone mapping with maximum color value as scaling factor
         opg::DeviceBuffer<glm::vec3> hsv_img_buffer(img.width * img.height);
         convertRgbToHsvBrightness(rgb_img_buffer.data(), hsv_img_buffer.data(), img.width * img.height);
+        CUDA_SYNC_CHECK();
 
         opg::DeviceBuffer<float> max_buffer(1);
         opg::DeviceBuffer<float> min_buffer(1);
         brightnessMinMax(hsv_img_buffer.data(), min_buffer.data(), max_buffer.data(), img.width * img.height);
+        CUDA_SYNC_CHECK();
         float max;
         max_buffer.download(&max);
 
         multiplyByScalar(rgb_img_buffer.data(), 1.0f / max, img.width * img.height);
+        CUDA_SYNC_CHECK();
     }
     else if (mode == "linear_fixed")
     {
         // TODO: implement linear tone mapping with hand picked scaling factor
         multiplyByScalar(rgb_img_buffer.data(), 0.5f, img.width * img.height);
+        CUDA_SYNC_CHECK();
     }
     else if (mode == "gamma_fixed")
     {
         // TODO: implement gamm tone mapping with hand picked gamma
         powerByScalar(rgb_img_buffer.data(), 1.0f / 2.2f, img.width * img.height);
+        CUDA_SYNC_CHECK();
     }
     else if (mode == "histogram")
     {
@@ -124,7 +129,24 @@ opg::ImageData tonemapImage(const opg::ImageData& img, const std::string& mode)
         // 2. compute cumulative sum
         // 3. calculate respective probabilities for brightness values
         // 4. perform histogram mapping on unfiltered image
-//
+
+        float min, max;
+        min_buffer.download(&min);
+        max_buffer.download(&max);
+
+        computeHistogram(filtered_hsv_brightness_buffer.data(), bins_buffer.data(), min, max, number_bins, img.width * img.height);
+        CUDA_SYNC_CHECK();
+
+        cumulate(bins_buffer.data(), cum_bins_buffer.data(), number_bins);
+        CUDA_SYNC_CHECK();
+
+        uint32_t T;
+        cum_bins_buffer.downloadSub(&T, 1, number_bins - 1);
+        multiplyByScalar(cum_bins_buffer.data(), accum_probs_buffer.data(), 1.0f / T, number_bins);
+        CUDA_SYNC_CHECK();
+
+        histogramEqualization(hsv_brightness_buffer.data(), accum_probs_buffer.data(), min, max, number_bins, img.width * img.height);
+        CUDA_SYNC_CHECK();
 
         convertHsvToRgb(hsv_brightness_buffer.data(), rgb_img_buffer.data(), img.width * img.height);
         CUDA_SYNC_CHECK();

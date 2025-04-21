@@ -22,7 +22,12 @@ void convertRgbToHsvBrightness(glm::vec3* rgb, glm::vec3* hsv, uint32_t number_p
 void convertHsvToRgb(glm::vec3* hsv, glm::vec3* rgb, uint32_t number_pixels);
 
 void multiplyByScalar(glm::vec3* values, float scalar, uint32_t number_values);
+void multiplyByScalar(uint32_t* in, float* out, float scalar, uint32_t number_values);
 void powerByScalar(glm::vec3* values, float exponent, uint32_t number_values);
+
+void computeHistogram(glm::vec3* values, uint32_t* bins, float min_value, float max_value, uint32_t number_bins, uint32_t number_values);
+void cumulate(uint32_t* bins, uint32_t* cum_bins, uint32_t number_bins);
+void histogramEqualization(glm::vec3* values, float* cdf, float min_value, float max_value, uint32_t number_bins, uint32_t number_values);
 
 // TODO: declare your functions here
 //
