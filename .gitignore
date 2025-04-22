@@ -57,4 +57,4 @@ _deps
 bin/
 build/
 lib/
-external/OptiX/include/
+external/OptiX/*
