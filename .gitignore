@@ -58,3 +58,5 @@ bin/
 build/
 lib/
 external/OptiX/*
+.vs/*
+CMakeSettings.json
