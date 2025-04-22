@@ -37,8 +37,8 @@ extern "C" __global__ void __raygen__main()
      */
     glm::vec3 ray_origin = params.camera.eye;
 
-    float u = ((pixel_index.x + 0.5) - (image_width/2)) / (image_width/2);
-    float v = ((pixel_index.y + 0.5) - (image_height/2)) / (image_height/2);
+    float u = ((pixel_index.x + 0.5) - (params.image_width/2)) / (params.image_width/2);
+    float v = ((pixel_index.y + 0.5) - (params.image_height/2)) / (params.image_height/2);
     glm::vec3 ray_dir = glm::normalize(params.camera.W + u * params.camera.U + v * params.camera.V);
     //
 
