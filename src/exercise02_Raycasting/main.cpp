@@ -35,7 +35,16 @@ void createSceneGeometry(opg::Scene *scene)
 
     /// Add an ellipsoid with radii (0.25, 0.75, 0.25) rotated by pi/4 around the z axis translated to (0, 1, 0)
     {
-        //
+        SphereShape* ellipsoid = scene->createSceneComponent<SphereShape>(opg::Properties());
+
+        glm::mat4 to_world = glm::translate(glm::vec3(0, 1, 0));
+        to_world = glm::rotate(to_world, M_PIf/4.0f, glm::vec3(0, 0, 1));
+        to_world = glm::scale(to_world, glm::vec3(0.25, 0.75, 0.25));
+        
+        opg::Properties ellipsoid_props;
+        ellipsoid_props.setComponent("shape", ellipsoid);
+        ellipsoid_props.setMatrix("to_world", to_world);
+        auto ellipsoidInstance = scene->createSceneComponent<opg::ShapeInstance>(ellipsoid_props);
     }
 
     /// Add a cylinder at (0, -1, 0) with an axis-vector from center to tip of (0.6, 0.6, 0.6) and radius 0.3
@@ -53,7 +62,7 @@ void createSceneGeometry(opg::Scene *scene)
         opg::Properties props;
         props.setComponent("shape", sphere);
         props.setMatrix("to_world", to_world);
-        auto ellipsoidInstance = scene->createSceneComponent<opg::ShapeInstance>(props);
+        auto sphereInstance = scene->createSceneComponent<opg::ShapeInstance>(props);
     }
 
     // Add a cube scaled by 0.5 translated to (-1, 0, 0)
