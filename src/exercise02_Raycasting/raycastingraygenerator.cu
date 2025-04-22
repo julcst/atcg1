@@ -35,11 +35,11 @@ extern "C" __global__ void __raygen__main()
     /* Implement:
      * - Generate camera rays
      */
+    glm::vec3 ray_origin = params.camera.eye;
 
-    // NOTE: this is a dummy implementation such that you are at least able to see something in the scene by default:
-    glm::vec3 ray_origin = glm::vec3(glm::vec2(launch_idx) / glm::vec2(launch_dims) * 4.0f - 2.0f, 10.0f);
-    glm::vec3 ray_dir = glm::vec3(0, 0, -1);
-
+    float u = ((pixel_index.x + 0.5) - (image_width/2)) / (image_width/2);
+    float v = ((pixel_index.y + 0.5) - (image_height/2)) / (image_height/2);
+    glm::vec3 ray_dir = glm::normalize(params.camera.W + u * params.camera.U + v * params.camera.V);
     //
 
     SurfaceInteraction si;
