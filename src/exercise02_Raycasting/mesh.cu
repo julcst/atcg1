@@ -108,6 +108,17 @@ extern "C" __global__ void __closesthit__mesh()
     si->emitter = sbt_data->emitter;
 }
 
+__device__ bool remove_for_menger_sponge(float u, float v, uint32_t level){
+    if (level == 0) return false;
+    //transform UV coordinates to a 3x3 grid
+    int grid_u = static_cast<int>(u * 3.0f) % 3;
+    int grid_v = static_cast<int>(v * 3.0f) % 3;
+    //remove central square
+    if (grid_u == 1 && grid_v == 1) return true;
+    //recursion
+    return remove_for_menger_sponge(u * 3.0f - static_cast<float>(grid_u), v * 3.0f - static_cast<float>(grid_v), level - 1);
+}
+
 extern "C" __global__ void __anyhit__mesh()
 {
     const ShapeInstanceHitGroupSBTData* sbt_data = reinterpret_cast<const ShapeInstanceHitGroupSBTData*>(optixGetSbtDataPointer());
@@ -147,6 +158,8 @@ extern "C" __global__ void __anyhit__mesh()
      * - Cutout the holes of a level 3 Menger sponge given the UV coordinates in [0, 1]^2 on the face of a cube.
      * - Discard intersections via `void optixIgnoreIntersection()`.
      */
+
+    if(remove_for_menger_sponge(uv.x, uv.y, 3)) optixIgnoreIntersection();
 
     //
 }
