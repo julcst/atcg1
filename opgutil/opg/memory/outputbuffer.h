@@ -70,14 +70,14 @@ OutputBuffer<T>::OutputBuffer(OutputBufferType type, uint32_t width, uint32_t he
         int current_device, is_display_device;
         CUDA_CHECK( cudaGetDevice(&current_device) );
         CUDA_CHECK( cudaDeviceGetAttribute(&is_display_device, cudaDevAttrKernelExecTimeout, current_device) );
-        if (!is_display_device)
-        {
-            throw std::runtime_error(
-                    "GL interop is only available on display device, please use display device for optimal "
-                    "performance.  Alternatively you can disable GL interop with --no-gl-interop and run with "
-                    "degraded performance."
-                    );
-        }
+        // if (!is_display_device)
+        // {
+        //     throw std::runtime_error(
+        //             "GL interop is only available on display device, please use display device for optimal "
+        //             "performance.  Alternatively you can disable GL interop with --no-gl-interop and run with "
+        //             "degraded performance."
+        //             );
+        // }
     }
     resize(width, height);
 }
