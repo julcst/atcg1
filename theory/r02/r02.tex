@@ -56,7 +56,103 @@ The solutions of this are:
 \section*{Assignment 3}
 
 \subsection*{Ray-Triangle intersection}
+Given a ray $r(t)$ with origin $o$ and direction $d$:
+\begin{equation*}
+  r(t) = o + t \cdot d
+\end{equation*}
+and a triangle with vertices $a$, $b$, $c$ in global coordinates.
+\subsection*{ Barycentric Coordinates }
 
-%TODO
 
+Precompute normal n of triangle plane:
+        \begin{equation*}
+            n = (b-a) \times (c-a)
+        \end{equation*}
+    and value $p = - n \cdot a$ for all triangles.
+\begin{enumerate}
+    \item \textbf{if } $n \cdot d$ = 0: \textbf{return false } (3 mult, 2 add)
+    \item Compute parameter $t$: (3 mult, 3 add, 1 div)
+        \begin{equation*}
+            t = -\frac{p + (n \cdot o)}{n \cdot d}
+        \end{equation*}
+    \item \textbf{if} $t \leq 0$: \textbf{return false }
+    \item Compute intersection point $q$: (3 mult, 3 add)
+        \begin{equation*}
+            q = o + t \cdot d
+        \end{equation*}
+    \item Compute barycentric coordinates $\alpha, \beta, \gamma$ of intersection point $q$ with respect to the triangle vertices: (27 mult, 17 add/sub, 2 div)
+        \begin{equation*}
+                \alpha = \frac{((b-c) \times (q-c))\cdot n}{((b-a) \times (c-a)) \cdot n}
+        \end{equation*}
+        \begin{equation*}
+                \beta = \frac{((c-a) \times (q-a))\cdot n}{((b-a) \times (c-a)) \cdot n}
+        \end{equation*}
+         \begin{equation*}
+                \gamma = 1 - \alpha - \beta
+        \end{equation*}
+    \item \textbf{if }$\alpha \geq 0, \beta \geq 0, \gamma \geq 0$: \textbf{return true}
+\end{enumerate}
+
+Total Operations with $n$ and $p$ precomputed:\\
+Multiplications: 36\\
+Additions/Subtractions: 25\\
+Divisions: 3
+
+
+\subsection*{Möller-Trumbore}
+\begin{enumerate}
+    \item Compute Edges $e1$, $e2$: (6 sub)
+            \begin{equation*}
+                e_1 = b - a
+            \end{equation*}
+                        \begin{equation*}
+                e_2 = c - a
+            \end{equation*}
+    \item Compute Cross Product $h$: (6 mult, 3 sub)
+            \begin{equation*}
+                h = d \times e_2
+            \end{equation*}
+    \item Compute the determinant: (3 mult, 2 add)
+        \begin{equation*}
+            \text{det} = e_1 \cdot h
+        \end{equation*}
+    \item \textbf{if } $|\text{det}| < \epsilon$: \textbf{return false} (ray is parallel to triangle plane)
+    \item Compute inverse determinant: (1 div)
+        \begin{equation*}
+            \text{det\_inv} = \frac{1}{\text{det}}
+        \end{equation*}
+    \item Compute vector $s$ from vertex $a$ to ray origin: (3 sub)
+        \begin{equation*}
+            s = o - a
+        \end{equation*}
+    \item Compute first barycentric coordinate $u$: (4 mult, 2 add)
+        \begin{equation*}
+            u = (s \cdot h) \times \text{det\_inv}
+        \end{equation*}
+    \item \textbf{if } $u < 0$ \textbf{or} $u > 1$ : \textbf{return false}
+    \item Compute cross product $q$: (6 mult, 3 sub)
+    \begin{equation*}
+        q = s \times e_1
+    \end{equation*}
+    \item Compute second barycentric coordinate  $v$:  (4 mult, 2 add)
+        \begin{equation*}
+            v = (d \cdot q) \times \text{det\_inv}
+        \end{equation*}
+    \item \textbf{if } $v < 0$ \textbf{or} $u+v > 1$ : \textbf{return false}
+    \item Compute parameter $t$ and intersection point $q$ (7 mult, 5 add):
+        \begin{equation*}
+            t = (e_2 \cdot q) \times \text{det\_inv}
+        \end{equation*}
+        \begin{equation*}
+                q = o + t \cdot d
+        \end{equation*}
+\end{enumerate}
+
+Total Operations: \\
+Multiplications: 30\\
+Additions/Subtractions: 26\\
+Divisions: 1\\
+\\
+In the case of a successful intersection, the Möller–Trumbore algorithm requires six fewer multiplications, 2 fewer (costly) divisions and one additional addition, assuming sequential execution without parallelization.\\
+Fewer divisions and cross product calculations also lead to improved numerical stability compared to the approach based on barycentric coordinates.
 \end{document}
