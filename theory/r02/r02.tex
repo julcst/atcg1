@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[left=3.5cm, right = 3.5cm, top=3.5cm, bottom=3.5cm, head=13.6pt]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{comment}
+\usepackage{csquotes}
+
+
+\title{Advanced Topics in Computer Graphics I - Sheet R02}
+\author{Ninian Kaspers, Robin Landsgesell, Julian Stamm}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Assignment 2}
+
+\subsection*{Ray-Sphere intersection}
+
+Given a ray $r(t)$ with origin $o$ and direction $d$:
+\begin{equation*}
+  r(t) = o + t \cdot d  
+\end{equation*}
+and a sphere with center $c$ and radius $r$ defined by:
+\begin{equation*}
+  \Vert x - c \Vert^2 = r^2
+\end{equation*}
+Substitute ray equation into sphere equation:
+\begin{align*}
+  \Vert o + t \cdot d - c \Vert^2 &= r^2\\
+  \Vert o + t \cdot d - c \Vert^2 - r^2 &= 0 &\vert\text{ Substitute }o-c=s\\
+  (s + t \cdot d) \cdot (s + t \cdot d) - r^2 &= 0\\
+  s \cdot s + t \cdot d \cdot s + t \cdot d \cdot s + t \cdot d \cdot t \cdot d - r^2 &= 0\\
+  d \cdot d \cdot t^2 + 2 \cdot d \cdot s \cdot t + s \cdot s - r^2 &= 0 &\vert\text{ Substitute back }o-c=s\\
+  d \cdot d \cdot t^2 + 2 \cdot d \cdot (o-c) \cdot t + (o-c) \cdot (o-c) - r^2 &= 0
+\end{align*}
+This results in a quadratic equation of the form $at^2 + bt + c = 0$ with
+\begin{align*}
+  a &= d \cdot d\\
+  b &= 2 \cdot d \cdot (o-c)\\
+  c &= (o-c) \cdot (o-c) - r^2
+\end{align*}
+The solutions of this are:
+\begin{equation*}
+  t = \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\end{equation*}
+
+\section*{Assignment 3}
+
+\subsection*{Ray-Triangle intersection}
+
+%TODO
+
+\end{document}
