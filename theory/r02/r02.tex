@@ -68,7 +68,7 @@ Precompute normal n of triangle plane:
         \begin{equation*}
             n = (b-a) \times (c-a)
         \end{equation*}
-    and value $p = - n \cdot a$ for all Triangles.
+    and value $p = - n \cdot a$ for all triangles.
 \begin{enumerate}
     \item \textbf{if } $n \cdot d$ = 0: \textbf{return false } (3 mult, 2 add)
     \item Compute parameter $t$: (3 mult, 3 add, 1 div)
@@ -80,7 +80,7 @@ Precompute normal n of triangle plane:
         \begin{equation*}
             q = o + t \cdot d
         \end{equation*}
-    \item Compute barycentric coordinates $\alpha, \beta, \gamma$ of intersection point $q$ with respect to the triangle vertices: (27 mult, 17 add/sub)
+    \item Compute barycentric coordinates $\alpha, \beta, \gamma$ of intersection point $q$ with respect to the triangle vertices: (27 mult, 17 add/sub, 2 div)
         \begin{equation*}
                 \alpha = \frac{((b-c) \times (q-c))\cdot n}{((b-a) \times (c-a)) \cdot n}
         \end{equation*}
@@ -93,11 +93,10 @@ Precompute normal n of triangle plane:
     \item \textbf{if }$\alpha \geq 0, \beta \geq 0, \gamma \geq 0$: \textbf{return true}
 \end{enumerate}
 
-
 Total Operations with $n$ and $p$ precomputed:\\
 Multiplications: 36\\
 Additions/Subtractions: 25\\
-Divisions: 1
+Divisions: 3
 
 
 \subsection*{Möller-Trumbore}
@@ -154,5 +153,5 @@ Multiplications: 30\\
 Additions/Subtractions: 26\\
 Divisions: 1\\
 \\
-In the case of a successful intersection, the Möller–Trumbore algorithm requires six fewer multiplications and one additional addition or subtraction, assuming no parallelization.
+In the case of a successful intersection, the Möller–Trumbore algorithm requires six fewer multiplications,  one additional addition or subtraction, and two additional (very costly) divisions, assuming sequential execution without parallelization.
 \end{document}
