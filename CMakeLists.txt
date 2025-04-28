@@ -3,6 +3,8 @@ cmake_minimum_required(VERSION 3.18 FATAL_ERROR)
 # Auto-initialize CUDA_ARCHITECTURES
 cmake_policy(SET CMP0104 NEW)
 
+set(CMAKE_CUDA_HOST_COMPILER ${CMAKE_C_COMPILER})
+
 # Add paths to our CMake code to the module path, so they can be found automatically by CMake.
 set(CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
 
