@@ -40,7 +40,7 @@ extern "C" __global__ void __intersection__cylinder()
         float sqrt_d = sqrtf(d);
 
         //first possible intersection
-        float t1 = (-b + sqrt_d) / 2.0f * a;
+        float t1 = (-b + sqrt_d) / (2.0f * a);
         if (t1 > ray_tmin && t1 < ray_tmax) {
             //check if intersection point inside z range defined by cylinder height
             isec_pos = ray_orig + t1 * ray_dir;
@@ -50,7 +50,7 @@ extern "C" __global__ void __intersection__cylinder()
         }
 
         //second possible intersection
-        float t2 = (-b - sqrt_d) / 2.0f * a;
+        float t2 = (-b - sqrt_d) / (2.0f * a);
         if (t2 > ray_tmin && t2 < ray_tmax) {
             //check if intersection point inside z range defined by cylinder height
             isec_pos = ray_orig + t2 * ray_dir;
