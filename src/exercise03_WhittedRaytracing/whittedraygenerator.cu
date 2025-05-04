@@ -115,6 +115,18 @@ extern "C" __global__ void __raygen__main()
              *     Hint: The throughput of the ray between the surface interaction and camera is stored in `ray_ctx.throughput`.
              */
 
+            const auto lightSample = emitter->sampleLight(si, dummy_rng);
+            if (!traceOcclusion(
+                params.traversable_handle,
+                si.position,
+                lightSample.direction_to_light,
+                params.scene_epsilon,
+                lightSample.distance_to_light,
+                params.occlusion_trace_params
+            )) {
+                output_radiance += ray_ctx.throughput * bsdf->evalBSDF(si, lightSample.direction_to_light, +BSDFComponentFlag::DiffuseReflection).bsdf_value * lightSample.radiance_weight_at_receiver;
+            }
+
             //
         }
 

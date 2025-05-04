@@ -58,7 +58,9 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__opaque_sampleBSDF(co
      *   - Compute the BSDF for the reflection of the incoming ray direction to the outgoing ray direction.
      *   - Set the sampling pdf to 1 to indicate a valid result (The sampling pdf is used later for stochastic sampling methods)
      */
-
+    result.outgoing_ray_dir = glm::reflect(si.incoming_ray_dir, si.normal);
+    result.bsdf_weight = fresnel_schlick(sbt_data->specular_F0, glm::max(glm::dot(si.incoming_ray_dir, si.normal), 0.0f));
+    result.sampling_pdf = 1; // valid sample
     //
 
     return result;
@@ -72,6 +74,16 @@ extern "C" __device__ BSDFEvalResult __direct_callable__refractive_evalBSDF(cons
     result.bsdf_value = glm::vec3(0);
     result.sampling_pdf = 0;
     return result;
+}
+
+__device__ __forceinline__ glm::vec3 refract(const glm::vec3 &I, const glm::vec3 &N, float eta)
+{
+    const float dotValue = glm::dot(I, N);
+    const float k = 1.0f - eta * eta * (1.0f - dotValue * dotValue);
+    if (k < 0.0f) return glm::vec3(0); // Total internal reflection
+    const float cI = eta;
+    const float cN = -eta * dotValue - std::sqrt(k);
+    return cI * I + cN * N;
 }
 
 extern "C" __device__ BSDFSamplingResult __direct_callable__refractive_sampleBSDF(const SurfaceInteraction &si, BSDFComponentFlags component_flags, PCG32 &unused_rng)
@@ -92,6 +104,28 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__refractive_sampleBSD
      *   Hint: The surface normals point outwards.
      *   Hint: You can use Schlick's approximation for the Fresnel term to compute the amount of light reflected or transmitted.
      */
+
+    const auto inside = glm::dot(si.incoming_ray_dir, si.normal) < 0.0f;
+    const auto n = inside ? si.normal : -si.normal;
+    const auto eta = inside ? 1.0f / sbt_data->index_of_refraction : sbt_data->index_of_refraction;
+
+    auto F0 = (1.0f - sbt_data->index_of_refraction) / (1.0f + sbt_data->index_of_refraction);
+    F0 = F0 * F0;
+    
+    if (component_flags == +BSDFComponentFlag::IdealReflection)
+    {
+        result.outgoing_ray_dir = glm::reflect(si.incoming_ray_dir, n);
+        result.bsdf_weight = glm::vec3(fresnel_schlick(F0, glm::abs(glm::dot(si.incoming_ray_dir, n))));
+        result.sampling_pdf = 1; // valid sample
+    }
+    else if (component_flags == +BSDFComponentFlag::IdealTransmission)
+    {
+        const auto R = refract(si.incoming_ray_dir, n, eta);
+        if (R == glm::vec3(0)) return result; // Total internal reflection
+        result.outgoing_ray_dir = glm::refract(si.incoming_ray_dir, n, eta);
+        result.bsdf_weight = glm::vec3(1.0f - fresnel_schlick(F0, glm::abs(glm::dot(si.incoming_ray_dir, n))));
+        result.sampling_pdf = 1; // valid sample
+    }
 
     //
 
