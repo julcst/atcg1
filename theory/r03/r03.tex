@@ -1,0 +1,71 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[left=3.5cm, right = 3.5cm, top=3.5cm, bottom=3.5cm, head=13.6pt]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{comment}
+\usepackage{csquotes}
+
+
+\title{Advanced Topics in Computer Graphics I - Sheet R03}
+\author{Ninian Kaspers, Robin Landsgesell, Julian Stamm}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+
+    \section*{Assignment 2}
+    \subsection*{Reflection Equation}
+    Radiance of Sun: $L_s = 20.045 \frac{MW}{m^2 \cdot sr}$ \\
+    \subsubsection*{Irradiance of table:}
+    Solid Angle Sun:
+    \begin{align*}
+        \Omega &= \pi \cdot \frac{r_s^2}{d_s^2} \\
+        &= 6.81 \cdot 10^{-5} sr \\
+    \end{align*}
+    Where $r_s$ is the radius of the sun and $d_s$ is the distance to the sun.\\
+    \begin{align*}
+        E_T &= \int_{\Omega} L_{\theta} \cdot \cos(\theta) \cdot d\omega \\
+        &= L_s \cdot \cos(45^{\circ}) \cdot \int_{\Omega} d\omega \\
+        &= 20.045 \cdot 10^6 \frac{W}{m^2 \cdot sr} \cdot \cos(45^{\circ}) \cdot 6.81 \cdot 10^{-5} sr \\
+        &= 965.246 \frac{W}{m^2} \\
+    \end{align*}
+    \subsubsection*{Radiance of table:}
+    \begin{align*}
+        L_T &= L_e + f_{BRDF} \cdot E_T \\
+        &= 0 + \frac{0.5}{\pi} \cdot E_T \\
+        &= \frac{0.5}{\pi} \cdot 965.246 \frac{W}{m^2} \\
+        &= 153.624 \frac{W}{m^2 \cdot sr} \\
+    \end{align*}
+    \subsubsection*{Irradiance of Lens:}
+    Solid Angle Table:
+    \begin{align*}
+        \Omega &= 4 \cdot \arctan \left( \frac{l^2}{2d \cdot \sqrt{4d^2 + 2l^2}} \right) \\
+        &= 4 \cdot \arctan \left( \frac{(0.8 m)^2}{2 \cdot 1.2 m \cdot \sqrt{4 \cdot (1.2 m)^2 + 2 \cdot (0.8 m)^2}} \right)) \\
+        &= 0.401 sr \\
+    \end{align*}
+    \begin{align*}
+        E_L &= \int_{\Omega} L_{\theta} \cdot \cos(\theta) \cdot d\omega \\
+        &= L_T \cdot \cos(45^{\circ}) \cdot \int_{\Omega} d\omega \\
+        &= 153.624 \frac{W}{m^2 \cdot sr} \cdot \cos(0 \circ) \cdot 0.401 sr \\
+        &= 61.552 \frac{W}{m^2} \\
+    \end{align*}
+    \subsubsection*{Radiant Power of Lens:}
+    \begin{align*}
+        A &= \pi \cdot r^2 \\
+        &= \pi \cdot (0.025 m)^2 \\
+        &= 0.0019635 m^2 \\
+    \end{align*}
+    \begin{align*}
+        P_L &= E_L \cdot A \\
+        &= 61.552 \frac{W}{m^2} \cdot 0.0019635 m^2 \\
+        &= 0.121 W \\
+    \end{align*}
+\end{document}
