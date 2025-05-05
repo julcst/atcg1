@@ -23,7 +23,7 @@
 
     \section*{Assignment 2}
     \subsection*{Reflection Equation}
-    Radiance of Sun: $L_s = 20.045 \frac{MW}{m^2 \cdot sr}$ \\
+    Radiance of Sun: $L_s = 20.045 \frac{MW}{m^2 sr}$ \\
     \subsubsection*{Irradiance of table:}
     Solid Angle Sun:
     \begin{align*}
@@ -34,15 +34,14 @@
     \begin{align*}
         E_T &= \int_{\Omega} L_{\theta} \cdot \cos(\theta) \cdot d\omega \\
         &= L_s \cdot \cos(45^{\circ}) \cdot \int_{\Omega} d\omega \\
-        &= 20.045 \cdot 10^6 \frac{W}{m^2 \cdot sr} \cdot \cos(45^{\circ}) \cdot 6.81 \cdot 10^{-5} sr \\
+        &= 20.045 \cdot 10^6 \frac{W}{m^2 sr} \cdot \cos(45^{\circ}) \cdot 6.81 \cdot 10^{-5} sr \\
         &= 965.246 \frac{W}{m^2} \\
     \end{align*}
     \subsubsection*{Radiance of table:}
     \begin{align*}
         L_T &= L_e + f_{BRDF} \cdot E_T \\
-        &= 0 + \frac{0.5}{\pi} \cdot E_T \\
-        &= \frac{0.5}{\pi} \cdot 965.246 \frac{W}{m^2} \\
-        &= 153.624 \frac{W}{m^2 \cdot sr} \\
+        &= 0 \frac{W}{m^2 sr} + \frac{0.5}{\pi} \frac{1}{sr} \cdot 965.246 \frac{W}{m^2} \\
+        &= 153.624 \frac{W}{m^2 sr} \\
     \end{align*}
     \subsubsection*{Irradiance of Lens:}
     Solid Angle Table:
@@ -54,7 +53,7 @@
     \begin{align*}
         E_L &= \int_{\Omega} L_{\theta} \cdot \cos(\theta) \cdot d\omega \\
         &= L_T \cdot \cos(0^{\circ}) \cdot \int_{\Omega} d\omega \\
-        &= 153.624 \frac{W}{m^2 \cdot sr} \cdot \cos(0^\circ) \cdot 0.401 sr \\
+        &= 153.624 \frac{W}{m^2 sr} \cdot \cos(0^\circ) \cdot 0.401 sr \\
         &= 61.552 \frac{W}{m^2} \\
     \end{align*}
     \subsubsection*{Radiant Power of Lens:}
