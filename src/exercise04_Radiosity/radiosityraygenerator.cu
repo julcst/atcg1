@@ -108,7 +108,25 @@ extern "C" __global__ void __raygen__generateRadiosity()
      * - compute the entries of the matrix params.form_factor_matrix (called F_ij in the lecture) that describes the light transport between two surface patches
      * - take the visibility into account
      */
+    const auto v0 = (primitive_1.position[0] + primitive_1.position[1] + primitive_1.position[2]) / 3.0f;
+    const auto v1 = (primitive_2.position[0] + primitive_2.position[1] + primitive_2.position[2]) / 3.0f;
+    const auto n0 = glm::normalize(primitive_1.normal[0] + primitive_1.normal[1] + primitive_1.normal[2]);
+    const auto n1 = glm::normalize(primitive_2.normal[0] + primitive_2.normal[1] + primitive_2.normal[2]);
 
+    auto dir = v1 - v0;
+    auto dist = glm::length(dir);
+    dir /= dist;
+    const auto visible = traceOcclusion(
+            params.traversable_handle,
+            v0, // ray origin
+            dir, // ray direction
+            params.scene_epsilon,
+            dist - params.scene_epsilon,
+            params.occlusion_trace_params
+    );
+    if (visible) {
+        const auto G = glm::dot(n0, dir) * glm::dot(n1, -dir) / (dist * dist);
+    }
     //
 }
 
