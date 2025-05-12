@@ -201,14 +201,49 @@ void RadiosityRayGenerator::computeRadiosity()
 
     float lambda = 1.0f;
 
+    // Print the form factor matrix
+    // std::cout << "Form factor matrix:" << std::endl;
+    // std::vector<float> form_factor_matrix(m_total_primitive_count * m_total_primitive_count);
+    // m_form_factor_matrix_buffer.download(form_factor_matrix.data());
+    // for (size_t i = 0; i < m_total_primitive_count; ++i) {
+    //     for (size_t j = 0; j < m_total_primitive_count; ++j) {
+    //         std::cout << form_factor_matrix[i * m_total_primitive_count + j] << " ";
+    //     }
+    //     std::cout << std::endl;
+    // }
+
     /* Implement:
      * - Initialize the radiosity solution with the emission
      * - Compute the radiosity iteratively using the Jacobi method: radiosity = radiosity + lambda * (emissions - K * radiosity)
      * - Write the resulting radiosity into the `RadiosityEmitter::m_primitiveRadiosity` buffer for each emitter in `m_radiosityEmitters`.
      * - Hint: you can write your own CUDA kernels in radiositykernels.h/cu.
      */
+    opg::DeviceBuffer<glm::vec3> radiosity_buffer;
+    radiosity_buffer.alloc(m_total_primitive_count);
+    radiosity_buffer.upload(emissions.data());
 
-    //
+    applyRadiositySteps(
+        emissions_buffer.data(),
+        albedos_buffer.data(),
+        m_form_factor_matrix_buffer.data(),
+        radiosity_buffer.data(),
+        m_total_primitive_count,
+        lambda,
+        5
+    );
+
+    // Visualize
+    primitive_offset = 0;
+    for (const auto &radiosity_emitter : m_radiosityEmitters) {
+        size_t primitive_count = radiosity_emitter->m_primitiveCount;
+        CUDA_CHECK(cudaMemcpy(
+            radiosity_emitter->m_primitiveRadiosity.data(),
+            radiosity_buffer.data() + primitive_offset,
+            primitive_count * sizeof(glm::vec3),
+            cudaMemcpyDeviceToDevice
+        ));
+        primitive_offset += primitive_count;
+    }
 }
 
 

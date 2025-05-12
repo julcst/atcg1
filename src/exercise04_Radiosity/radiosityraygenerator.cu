@@ -88,6 +88,9 @@ __device__ PrimitiveData makePrimitiveData(const ComputeFormFactorMatrixInstance
 
 
 
+constexpr float PI = 3.14159265358979323846f;
+constexpr float PI_INV = 1.0f / PI;
+
 extern "C" __global__ void __raygen__generateRadiosity()
 {
     const uint3 idx = optixGetLaunchIndex();
@@ -112,11 +115,15 @@ extern "C" __global__ void __raygen__generateRadiosity()
     const auto v1 = (primitive_2.position[0] + primitive_2.position[1] + primitive_2.position[2]) / 3.0f;
     const auto n0 = glm::normalize(primitive_1.normal[0] + primitive_1.normal[1] + primitive_1.normal[2]);
     const auto n1 = glm::normalize(primitive_2.normal[0] + primitive_2.normal[1] + primitive_2.normal[2]);
+    const auto A0 = glm::length(glm::cross(primitive_1.position[1] - primitive_1.position[0], primitive_1.position[2] - primitive_1.position[0])) * 0.5f;
+    const auto A1 = glm::length(glm::cross(primitive_2.position[1] - primitive_2.position[0], primitive_2.position[2] - primitive_2.position[0])) * 0.5f;
 
     auto dir = v1 - v0;
     auto dist = glm::length(dir);
     dir /= dist;
-    const auto visible = traceOcclusion(
+    if (dist < params.scene_epsilon)
+        return;
+    const auto occluded = traceOcclusion(
             params.traversable_handle,
             v0, // ray origin
             dir, // ray direction
@@ -124,9 +131,14 @@ extern "C" __global__ void __raygen__generateRadiosity()
             dist - params.scene_epsilon,
             params.occlusion_trace_params
     );
-    if (visible) {
-        const auto G = glm::dot(n0, dir) * glm::dot(n1, -dir) / (dist * dist);
+    auto F = 0.0f;
+    if (!occluded) {
+        const auto G = glm::max(glm::dot(n0, dir), 0.0f) * glm::max(glm::dot(n1, -dir), 0.0f) / (dist * dist);
+        F = G * A0 * A1 * PI_INV;
+        //printf("G %f dist %f cos0 %f cos1 %f A0 %f A1 %f\n", G, dist, glm::dot(n0, dir), glm::dot(n1, -dir), primitive_1.area, primitive_2.area); // Why are the areas not set?
     }
+    params.form_factor_matrix[primitive_1.matrix_index * params.form_factor_matrix_size + primitive_2.matrix_index] = F;
+    params.form_factor_matrix[primitive_2.matrix_index * params.form_factor_matrix_size + primitive_1.matrix_index] = F;
     //
 }
 
