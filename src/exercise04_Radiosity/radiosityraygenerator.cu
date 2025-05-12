@@ -134,11 +134,11 @@ extern "C" __global__ void __raygen__generateRadiosity()
     auto F = 0.0f;
     if (!occluded) {
         const auto G = glm::max(glm::dot(n0, dir), 0.0f) * glm::max(glm::dot(n1, -dir), 0.0f) / (dist * dist);
-        F = G * A0 * A1 * PI_INV;
+        F = G * PI_INV;
         //printf("G %f dist %f cos0 %f cos1 %f A0 %f A1 %f\n", G, dist, glm::dot(n0, dir), glm::dot(n1, -dir), primitive_1.area, primitive_2.area); // Why are the areas not set?
     }
-    params.form_factor_matrix[primitive_1.matrix_index * params.form_factor_matrix_size + primitive_2.matrix_index] = F;
-    params.form_factor_matrix[primitive_2.matrix_index * params.form_factor_matrix_size + primitive_1.matrix_index] = F;
+    params.form_factor_matrix[primitive_1.matrix_index * params.form_factor_matrix_size + primitive_2.matrix_index] = F * A1;
+    params.form_factor_matrix[primitive_2.matrix_index * params.form_factor_matrix_size + primitive_1.matrix_index] = F * A0;
     //
 }
 

@@ -229,7 +229,7 @@ void RadiosityRayGenerator::computeRadiosity()
         radiosity_buffer.data(),
         m_total_primitive_count,
         lambda,
-        5
+        32
     );
 
     // Visualize

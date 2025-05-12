@@ -7,6 +7,7 @@
 
 // Compute the radiosity iteratively using the Jacobi method:
 // radiosity = radiosity + lambda * (emissions - K * radiosity)
+// for K := identity - diag(albedo) * form_factor_matrix
 __global__ void _applyRadiositySteps(
     const glm::vec3* emissions,
     const glm::vec3* albedos,
@@ -19,11 +20,13 @@ __global__ void _applyRadiositySteps(
     const auto i = blockIdx.x * blockDim.x + threadIdx.x;
     if (i >= total_primitive_count) return;
 
-    glm::vec3 radiosity = emissions[i];
+    glm::vec3 step = emissions[i];
     for (size_t j = 0; j < total_primitive_count; ++j) {
-        radiosity += form_factor_matrix[i * total_primitive_count + j] * old_radiosity[j];
+        auto K = -albedos[i] * form_factor_matrix[i * total_primitive_count + j];
+        if (i == j) K += 1.0f; // Add the identity matrix
+        step -= K * old_radiosity[j];
     }
-    new_radiosity[i] = old_radiosity[i] + lambda * radiosity * albedos[i];
+    new_radiosity[i] = old_radiosity[i] + lambda * step;
 }
 
 void applyRadiositySteps(
