@@ -24,8 +24,8 @@
 
     \section*{Assignment 2}
     
-    In the right image a micro-facet BRDF was used.\\
-    In the left image a Phong BRDF was used.\\
+    In the right image a Phong BRDF was used. The blur looks more uniform which corresponds to the simple formulation of the Phong BRDF using only the angle between the reflection vector and the view vector to determine the shape of the reflection.\\
+    In the left image a micro-facet BRDF was used. It models effects appearing at grazing angles more accurately. At grazing angles the larger tail of the NDF for a rough surface causes the blur of the reflections look more directional. This comes from the amount of microfacets that still contribute at these angles even though the viewing angle differs significantly from the ideal reflection direction. If the NDF is based on the tangent of the normal and the half-vector, this tangent causes this slower falloff producing the longer tails. Furthermore, the Fresnel term causes the reflection at grazing angles to appear brighter and even though the geometric term decreases this effect the reflection in the left image still seems to be brighter.
 
     \section*{Assignment 3}
 
