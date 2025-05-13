@@ -6,7 +6,6 @@
 *.slo
 *.lo
 *.o
-*.obj
 
 # Precompiled Headers
 *.gch
@@ -60,3 +59,5 @@ lib/
 external/OptiX/*
 .vs/*
 CMakeSettings.json
+imgui.ini
+imgui.ini
