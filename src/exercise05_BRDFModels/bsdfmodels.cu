@@ -123,9 +123,14 @@ extern "C" __device__ BSDFEvalResult __direct_callable__phong_evalBSDF(const Sur
      * Phong BRDF
      */
 
-    // TODO implement
+    glm::vec3 v = si.incoming_ray_dir;
+    glm::vec3 l = outgoing_ray_dir;
+    glm::vec3 r = glm::reflect(l, si.normal);
 
-    //
+    float alpha = sbt_data->exponent;
+    float rDotV = max(0.f, glm::dot(r, v));
+
+    specular_bsdf = (alpha + 2) / (2 * M_PIf) * glm::pow(rDotV, alpha) * sbt_data->specular_F0;
 
     float clampedNdotL = glm::max(0.0f, glm::dot(outgoing_ray_dir, si.normal) * -glm::sign(glm::dot(si.incoming_ray_dir, si.normal)));
 
@@ -156,9 +161,23 @@ extern "C" __device__ BSDFEvalResult __direct_callable__ward_evalBSDF(const Surf
      *     - Schlick's Fresnel approximation
      */
 
-    // TODO implement
+    glm::vec3 v = -si.incoming_ray_dir;
+    glm::vec3 l = outgoing_ray_dir;
+    glm::vec3 h = l + v;
+    glm::vec3 bitangent = glm::normalize(glm::cross(si.tangent, si.normal));
+    float NdotH = glm::max(0.00001f, glm::dot(si.normal, h));
+    float HdotT = glm::dot(si.tangent, h);
+    float HdotB = glm::dot(bitangent, h);
 
-    //
+    auto tangent_part = glm::pow(HdotT, 2) / glm::pow(sbt_data->roughness_tangent, 2);
+    auto bitangent_part = glm::pow(HdotB, 2) / glm::pow(sbt_data->roughness_bitangent, 2);
+
+    float normal_distribution = glm::exp( - (tangent_part + bitangent_part) / glm::pow(NdotH, 2) ) / (M_PIf * sbt_data->roughness_tangent * sbt_data->roughness_bitangent);
+
+    float normalization_factor = glm::dot(h,h) / glm::pow(NdotH, 4);
+    auto F = fresnel_schlick(sbt_data->specular_F0, glm::dot(v, h));
+
+    specular_bsdf = normal_distribution * normalization_factor * F;
 
     float clampedNdotL = glm::max(0.0f, glm::dot(outgoing_ray_dir, si.normal) * -glm::sign(glm::dot(si.incoming_ray_dir, si.normal)));
 
