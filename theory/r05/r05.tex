@@ -56,5 +56,56 @@
     
     \section*{Assignment 3}
 
+    a)\\
+    By Central Limit Theorem, the distribution of the sum of a large number of independent random variables approaches a normal distribution, thus $h$ becomes normally distributed.
+
+    We know that the expectation of sine and cosine is zero, because they are equally distributed around zero.
+    
+    The variance of a cosine is given by:
+    \begin{align*}
+        \text{Var}(\cos(x)) &= E[\cos^2(x)] - E[\cos(x)]^2\\
+        &= E[\frac{1 + \sin(2x)}{2}] - 0^2 = \frac{1}{2}
+    \end{align*}
+
+    And for sine:
+    \begin{align*}
+        \text{Var}(\sin(x)) &= E[\sin^2(x)] - E[\sin(x)]^2\\
+        &= E[\frac{1 - \cos(2x)}{2}] - 0^2 = \frac{1}{2}
+    \end{align*}
+
+    Thus, the expectation of $h(x,y)$ is:
+    \begin{align*}
+        E[h(x,y)] &= E[\sqrt{\frac{2}{N}} \sum_{i=1}^{N} \cos(\Theta_i + x f_i^x + y f_i^y]\\
+        &= \sqrt{\frac{2}{N}} \sum_{i=1}^{N} E[\cos(\Theta_i + x f_i^x + y f_i^y)]\\
+        &= 0
+    \end{align*}
+
+    The variance of $h(x,y)$ is:
+    \begin{align*}
+        \text{Var}(h(x,y)) &= E[h^2(x,y)] - E[h(x,y)]^2\\
+        &= E[\frac{2}{N} \sum_{i=1}^{N} \cos^2(\Theta_i + x f_i^x + y f_i^y)]\\
+        &= \frac{2}{N} \sum_{i=1}^{N} E[\cos^2(\Theta_i + x f_i^x + y f_i^y)]\\
+        &= \frac{2}{N} \sum_{i=1}^{N} \frac{1}{2}\\
+        &= \frac{2}{N} \cdot \frac{N}{2}\\
+        &= 1
+    \end{align*}
+
+    b)\\
+    By Central Limit Theorem, the distribution of the sum of a large number of independent random variables approaches a normal distribution, thus the slopes becomes normally distributed.
+
+    The expectation is:
+    \begin{align*}
+        E[\sqrt{\frac{2}{N}} \sum_{i=1}^{N} (-f_i^x \sin(\Theta_i + x f_i^x + y f_i^y), -f_i^y \sin(\Theta_i + x f_i^x + y f_i^y))]\\ 
+        = \sqrt{\frac{2}{N}} \sum_{i=1}^{N} E[(-f_i^x \sin(\Theta_i + x f_i^x + y f_i^y), -f_i^y \sin(\Theta_i + x f_i^x + y f_i^y))]\\
+        = (0, 0)
+    \end{align*}
+
+    The variance is:
+    \begin{align*}
+        \text{Var}(\sqrt{\frac{2}{N}} \sum_{i=1}^{N} (-f_i^x \sin(\Theta_i + x f_i^x + y f_i^y), -f_i^y \sin(\Theta_i + x f_i^x + y f_i^y)])\\
+        = E[\frac{2}{N} \sum_{i=1}^{N} (-f_i^x \sin(\Theta_i + x f_i^x + y f_i^y), -f_i^y \sin(\Theta_i + x f_i^x + y f_i^y))^T\\
+        (-f_i^x \sin(\Theta_i + x f_i^x + y f_i^y), -f_i^y \sin(\Theta_i + x f_i^x + y f_i^y))]\\
+        = \cdots
+    \end{align*}
     
 \end{document}
