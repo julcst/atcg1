@@ -145,7 +145,26 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__ggx_sampleBSDF(const
 
         // TODO implement diffuse reflection
 
-        //
+        // generate two uniform random samples
+        float u = rng.next1d();
+        float v = rng.next1d();
+
+        // uniform point on disk
+        float r = sqrt(u);
+        float phi = 2 * M_PIf * v;
+
+        // project point to hemisphere
+        float x = r * cos(phi);
+        float y = r * sin(phi);
+        float z = sqrt(glm::max(0.0f, 1.0f - x * x - y * y));
+        glm::vec3 local_dir = glm::vec3(x, y, z);
+
+        // transform to world coordinate system
+        glm::vec3 world_dir = local_frame * local_dir;
+
+        result.bsdf_weight = glm::vec3(branch_probability);
+        result.outgoing_ray_dir = world_dir;
+        result.sampling_pdf = 1;
     }
     else
     {
@@ -229,9 +248,21 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__refractive_sampleBSD
          * - Sample outgoing ray direction proportional to the reflection/transmission probability
          */
 
-        // TODO implement
-
-        //
+        // choose probabilistically reflection or transmission ray
+        if (rng.next1d() < reflection_probability)
+        {
+            // The probability of entering this branch is `reflection_probability`
+            result.bsdf_weight = glm::vec3(reflection_probability);
+            result.outgoing_ray_dir = reflected_ray_dir;
+            result.sampling_pdf = 1;
+        }
+        else
+        {
+            // The probability of entering this branch is `1 - reflection_probability` = `transmission_probability`
+            result.bsdf_weight = glm::vec3(transmission_probability);
+            result.outgoing_ray_dir = transmitted_ray_dir;
+            result.sampling_pdf = 1;
+        }
     }
 
     return result;
