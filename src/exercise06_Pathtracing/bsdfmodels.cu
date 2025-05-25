@@ -162,6 +162,9 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__ggx_sampleBSDF(const
         // transform to world coordinate system
         glm::vec3 world_dir = local_frame * local_dir;
 
+        // pdf of sample
+        branch_probability = branch_probability * glm::max(0.0f, (glm::dot(normal, world_dir) / M_PIf));
+
         result.bsdf_weight = glm::vec3(branch_probability);
         result.outgoing_ray_dir = world_dir;
         result.sampling_pdf = 1;
@@ -173,7 +176,30 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__ggx_sampleBSDF(const
 
         // TODO implement specular reflection
 
-        //
+        // generate two uniform random samples
+        float u = rng.next1d();
+        float v = rng.next1d();
+
+        // cos(theta_h) according to given CDF
+        float ndoth = sqrt((1 - u) / (1 + (((sbt_data->roughness * sbt_data->roughness) - 1) * u)));
+
+        // construct halfway vector using sampled azimuth angle
+        float phi = 2 * M_PIf * v;
+        float theta_h = acos(ndoth);
+        float x = sin(theta_h) * cos(phi);
+        float y = sin(theta_h) * sin(phi);
+        glm::vec3 h_local = glm::vec3(x, y, ndoth);
+        glm::vec3 h_world = local_frame * h_local;
+
+        // construct outgoing direction
+        glm::vec3 world_dir = 2 * glm::dot(view_dir, h_world) * h_world - view_dir;
+
+        // account for change of variables
+        branch_probability = branch_probability * ((D_GGX(ndoth, sbt_data->roughness) * ndoth)/(4 * glm::dot(h_world, world_dir)));
+
+        result.bsdf_weight = glm::vec3(branch_probability);
+        result.outgoing_ray_dir = world_dir;
+        result.sampling_pdf = 1;
     }
 
     return result;
