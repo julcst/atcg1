@@ -165,9 +165,9 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__ggx_sampleBSDF(const
         // pdf of sample
         branch_probability = branch_probability * glm::max(0.0f, (glm::dot(normal, world_dir) / M_PIf));
 
-        result.bsdf_weight = glm::vec3(branch_probability);
+        result.bsdf_weight = sbt_data->diffuse_color; // = BSDF / pdf
         result.outgoing_ray_dir = world_dir;
-        result.sampling_pdf = 1;
+        result.sampling_pdf = branch_probability;
     }
     else
     {
@@ -181,25 +181,43 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__ggx_sampleBSDF(const
         float v = rng.next1d();
 
         // cos(theta_h) according to given CDF
-        float ndoth = sqrt((1 - u) / (1 + (((sbt_data->roughness * sbt_data->roughness) - 1) * u)));
+        float NdotH = sqrt((1 - u) / (1 + (((sbt_data->roughness * sbt_data->roughness) - 1) * u)));
 
         // construct halfway vector using sampled azimuth angle
         float phi = 2 * M_PIf * v;
-        float theta_h = acos(ndoth);
+        float theta_h = acos(NdotH);
         float x = sin(theta_h) * cos(phi);
         float y = sin(theta_h) * sin(phi);
-        glm::vec3 h_local = glm::vec3(x, y, ndoth);
+        glm::vec3 h_local = glm::vec3(x, y, NdotH);
         glm::vec3 h_world = local_frame * h_local;
 
         // construct outgoing direction
         glm::vec3 world_dir = 2 * glm::dot(view_dir, h_world) * h_world - view_dir;
 
-        // account for change of variables
-        branch_probability = branch_probability * ((D_GGX(ndoth, sbt_data->roughness) * ndoth)/(4 * glm::dot(h_world, world_dir)));
+        const auto NdotL = glm::dot(normal, world_dir);
+        if (NdotL <= 0)
+        {
+            // The sampled direction is below the horizon, we cannot use it!
+            result.sampling_pdf = 0;
+            return result;
+        }
 
-        result.bsdf_weight = glm::vec3(branch_probability);
+        const auto VdotH = glm::dot(view_dir, h_world);
+        const auto LdotH = glm::dot(world_dir, h_world);
+
+        const auto D = D_GGX(NdotH, sbt_data->roughness);
+        const auto V = V_SmithJointGGX(NdotL, NdotV, sbt_data->roughness);
+        const auto F = fresnel_schlick(sbt_data->specular_F0, VdotH);
+
+        // account for change of variables
+        branch_probability = branch_probability * D * (4 * LdotH);
+
+        // This should be correct:
+        //result.bsdf_weight = F * V * D / (4.0f * NdotV * NdotL * branch_probability); // = BSDF / pdf
+        // But this looks more correct although V is missing:
+        result.bsdf_weight = F;
         result.outgoing_ray_dir = world_dir;
-        result.sampling_pdf = 1;
+        result.sampling_pdf = branch_probability;
     }
 
     return result;
@@ -278,16 +296,16 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__refractive_sampleBSD
         if (rng.next1d() < reflection_probability)
         {
             // The probability of entering this branch is `reflection_probability`
-            result.bsdf_weight = glm::vec3(reflection_probability);
+            result.bsdf_weight = glm::vec3(1);
             result.outgoing_ray_dir = reflected_ray_dir;
-            result.sampling_pdf = 1;
+            result.sampling_pdf = reflection_probability;
         }
         else
         {
             // The probability of entering this branch is `1 - reflection_probability` = `transmission_probability`
-            result.bsdf_weight = glm::vec3(transmission_probability);
+            result.bsdf_weight = glm::vec3(1);
             result.outgoing_ray_dir = transmitted_ray_dir;
-            result.sampling_pdf = 1;
+            result.sampling_pdf = transmission_probability;
         }
     }
 

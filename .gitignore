@@ -60,4 +60,4 @@ external/OptiX/*
 .vs/*
 CMakeSettings.json
 imgui.ini
-imgui.ini
+**/imgui.ini
