@@ -1,0 +1,87 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[left=3.5cm, right = 3.5cm, top=3.5cm, bottom=3.5cm, head=13.6pt]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{comment}
+\usepackage{csquotes}
+\usepackage{enumitem}
+
+
+\title{Advanced Topics in Computer Graphics I - Sheet R06}
+\author{Ninian Kaspers, Robin Landsgesell, Julian Stamm}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+
+    \section*{Assignment 2}
+
+    In this exercise you should manually determine the following integral using various methods:
+
+    \begin{align*}
+        I &= \int_{-\frac{\pi}{2}}^{\frac{\pi}{2}} e^{-x^2} \, dx
+    \end{align*}
+
+    % When random numbers are needed, use the following 20 numbers sampled uniformly from the interval [0, . . . , 1]:
+    % 0.4387 0.7655 0.1869 0.4456 0.7094 0.2760 0.6551 0.1190 0.9597 0.5853
+    % 0.3816 0.7952 0.4898 0.6463 0.7547 0.6797 0.1626 0.4984 0.3404 0.2238
+    % as numpy array R = np.array([0.4387, 0.7655, 0.1869, 0.4456, 0.7094, 0.2760, 0.6551, 0.1190, 0.9597, 0.5853, 0.3816, 0.7952, 0.4898, 0.6463, 0.7547, 0.6797, 0.1626, 0.4984, 0.3404, 0.2238])
+    
+    a) Calculate the integral numerically with a tool of your choice (maple, wolfram alpha, ...).
+
+    \begin{align*}
+        I &= \sqrt{\pi} \text{erf}(\frac{\pi}{2}) \approx 1.7258
+    \end{align*}
+
+    b) Calculate the integral using naive Monte Carlo Integration (samples drawn from a constant PDF). Specify PDF, CDF, inverse CDF, and the final result.
+
+    The PDF is given by $p(x) = \frac{1}{\pi}$ for $x \in [-\frac{\pi}{2}, \frac{\pi}{2}]$ and 0 otherwise.
+    
+    The CDF is given by $F(x) = \frac{x + \frac{\pi}{2}}{\pi}$ for $x \in [-\frac{\pi}{2}, \frac{\pi}{2}]$.
+    
+    The inverse CDF is given by $F^{-1}(u) = u \cdot \pi - \frac{\pi}{2}$ for $u \in [0, 1]$.
+
+    The final result using the 20 random numbers provided is:
+
+    \begin{align*}
+        I = \frac{1}{20} \sum_{x \in R} \frac{e^{-F^{-1}(x)^2}}{p(x)} \approx 2.0553025348193215
+    \end{align*}
+
+    c) Calculate the integral using Monte Carlo Integration B and Importance Sampling. Draw the necessary samples from a probability distribution proportional to g(x) = cos (x). As in the previous task, specify PDF, CDF, inverse CDF, and the final result.
+
+    The PDF is given by $p(x) = \frac{1}{\pi} \cos(x)$ for $x \in [-\frac{\pi}{2}, \frac{\pi}{2}]$ and 0 otherwise.
+
+    The CDF is given by $F(x) = \frac{\sin(x)}{\sin(\frac{\pi}{2})} = \sin(x)$ for $x \in [-\frac{\pi}{2}, \frac{\pi}{2}]$.
+
+    The inverse CDF is given by $F^{-1}(u) = \arcsin(u)$ for $u \in [0, 1]$.
+
+    The final result using the 20 random numbers provided is:
+
+    \begin{align*}
+        I = \frac{1}{20} \sum_{x \in R} \frac{e^{-F^{-1}(x)^2}}{p(x)} \approx 2.564792100610645
+    \end{align*}
+
+    d) 
+    Variance in b) is:
+    \begin{align*}
+        \text{Var}(I) \approx 0.6845154176519112
+    \end{align*}
+
+    Variance in c) is:
+    \begin{align*}
+        \text{Var}(I) \approx 0.4800330782913318
+    \end{align*}
+
+    Variance in c) is lower than in b) because the samples are drawn from a distribution that is more proportional to the function we are integrating, thus reducing the variance.
+
+    e) Because of its high dimensionality other methods of integration suffer from curse of dimensionality. Monte Carlo not.
+
+\end{document}

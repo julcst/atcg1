@@ -210,12 +210,13 @@ extern "C" __device__ BSDFSamplingResult __direct_callable__ggx_sampleBSDF(const
         const auto F = fresnel_schlick(sbt_data->specular_F0, VdotH);
 
         // account for change of variables
-        branch_probability = branch_probability * D * (4 * LdotH);
+        branch_probability = branch_probability * D / (4 * LdotH);
 
         // This should be correct:
         //result.bsdf_weight = F * V * D / (4.0f * NdotV * NdotL * branch_probability); // = BSDF / pdf
         // But this looks more correct although V is missing:
         result.bsdf_weight = F;
+
         result.outgoing_ray_dir = world_dir;
         result.sampling_pdf = branch_probability;
     }
