@@ -1,0 +1,66 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[left=3.5cm, right = 3.5cm, top=3.5cm, bottom=3.5cm, head=13.6pt]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{comment}
+\usepackage{csquotes}
+\usepackage{enumitem}
+\usepackage{stmaryrd}
+
+\title{Advanced Topics in Computer Graphics I - Sheet R07}
+\author{Ninian Kaspers, Robin Landsgesell, Julian Stamm}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+
+    \section*{Assignment 2}
+
+    In this exercise, you should analytically calculate variances for the Monte-Carlo integration of a product function when using multiple importance sampling. \\
+    We want to compute the integral  \\
+    \[ \int_{0}^{1} f_1(x)f_2(x)\,dx \]
+    where
+    \[f_1(x) = 20x(x - 0.5)(x - 1) + 1\]
+    \[f_2(x) = -20x(x - 0.5)(x - 1) + 1\]
+    via Monte-Carlo integration. \\
+    1) Use either f1 or f2 for the importance sampling. \\
+    \begin{align*}
+        p(x) &= \frac{f_1(x}{\int_{0}^{1} f_1(x)\, dx} = f_1(x) \\
+        \Rightarrow \langle F \rangle &= \frac{1}{N} \sum_{i=1}^{N} \frac{f_1(x_i)f_2(x_i)}{f_1(x_i)} \\
+        &= \frac{1}{N} \sum_{i=1}^{N} f_2(x_i) \\
+        \Rightarrow \mathbb{V}_{f1}[F] &= \frac{1}{N} (\mathbb{E}[F^2] - \mathbb{E}[F]^2) \\
+        &= \frac{1}{N} \left( \int_{0}^{1} f_2^2(x) \cdot f_1(x) \, dx - \left( \int_{0}^{1} f_2(x) \cdot f_1(x) \, dx \right)^2 \right) \\
+        &= \frac{1}{N} \left( 0.52381 - 0.52381^2 \right) \\
+        &= \frac{0.2494}{N}
+    \end{align*}
+
+    2) Use the balance heuristic described in the lecture slides (Monte-Carlo Integration, Sampling Strategies) with an equal number of samples for both functions. \\
+    \begin{align*}
+        p(x) &= \frac{1}{2} \cdot \frac{f_1(x)}{\int_{0}^{1} f_1(x)\, dx} + \frac{1}{2} \cdot \frac{f_2(x)}{\int_{0}^{1} f_2(x)\, dx} \\
+        &= \frac{1}{2} \left( f_1(x) + f_2(x) \right) \\
+        &= \frac{1}{2} \cdot 2
+        = 1 \\
+        \Rightarrow \langle F \rangle &= \frac{1}{N} \sum_{i=1}^{N} f_1(x_i)f_2(x_i) \\
+        \mathbb{V}_{p(x)}[F] &= \frac{1}{N} (\mathbb{E}[F^2] - \mathbb{E}[F]^2) \\
+        &= \frac{1}{N} \left( \int_{0}^{1} f_1^2(x)f_2^2(x) \, dx - \left( \int_{0}^{1} f_1(x)f_2(x) \, dx \right)^2 \right) \\
+        &= \frac{1}{N} \left( 0.380619 - 0.52381^2 \right) \\
+        &= \frac{0.106233}{N}
+    \end{align*}
+    3) Use the function f1 · f2 for the importance sampling. \\
+    \begin{align*}
+        p(x) &= \frac{f_1(x)f_2(x)}{\int_{0}^{1} f_1(x)f_2(x)\, dx} \\
+        \Rightarrow \langle F \rangle &= \frac{1}{N} \sum_{i=1}^{N} \frac{f_1(x_i)f_2(x_i)}{f_1(x_i)f_2(x_i)} \cdot \int_{0}^{1} f_1(x)f_2(x)\, dx \\
+        &= \frac{1}{N} \sum_{i=1}^{N} \int_{0}^{1} f_1(x)f_2(x)\, dx \\
+        &= \int_{0}^{1} f_1(x)f_2(x)\, dx \\
+        \Rightarrow \mathbb{V}&_{f1f2}[F] = 0
+    \end{align*}
+\end{document}
+
