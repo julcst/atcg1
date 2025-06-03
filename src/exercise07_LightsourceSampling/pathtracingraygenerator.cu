@@ -143,7 +143,12 @@ extern "C" __global__ void __raygen__main()
             float mi_weight = can_ray_be_generated_by_light_source_sampling ? 0 : 1;
 
             // TODO implement
-
+            if (can_ray_be_generated_by_light_source_sampling) {
+                float pdf_brdf = ray_ctx.last_sampling_pdf_for_mis;
+                float pdf_light = si.emitter->evalLightSamplingPdf(ray_ctx.last_interaction_for_mis, si);
+                // Balance heuristic
+                mi_weight = pdf_brdf / (pdf_brdf + pdf_light);
+            }
             //
 
             ray_ctx.output_radiance += ray_ctx.throughput * si.emitter->evalLight(si) * mi_weight;
@@ -206,7 +211,7 @@ extern "C" __global__ void __raygen__main()
             float mi_weight = 1;
 
             // TODO implement
-
+            mi_weight = emitter_sampling_result.sampling_pdf / (emitter_sampling_result.sampling_pdf + bsdf_sampling_pdf);
             //
 
             ray_ctx.output_radiance += ray_ctx.throughput * bsdf_value * emitter_sampling_result.radiance_weight_at_receiver * mi_weight;
