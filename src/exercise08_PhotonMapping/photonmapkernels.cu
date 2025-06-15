@@ -56,6 +56,26 @@ __device__ __forceinline__ void accumulatePhoton( const PhotonData &photon,
 }
 
 #define MAX_DEPTH 20 // one MILLION photons
+
+__device__ __forceinline__ void addChildrenToStack(
+    opg::Stack<uint32_t, MAX_DEPTH> &stack,
+    uint32_t node,
+    float signed_distance,
+    float gather_radius_sq)
+{
+    if (signed_distance * signed_distance < gather_radius_sq) {
+        // Traverse both children
+        stack.push(2 * node + 1); // Left child
+        stack.push(2 * node + 2); // Right child
+    } else if (signed_distance < 0.0f) {
+        // Traverse only left child
+        stack.push(2 * node + 1);
+    } else {
+        // Traverse only right child
+        stack.push(2 * node + 2);
+    }
+}
+
 __global__ void gatherPhotonsKernel(
     opg::BufferView<PhotonData> photon_map,
     opg::BufferView<PhotonGatherData> gather_data,
@@ -95,7 +115,43 @@ __global__ void gatherPhotonsKernel(
     glm::vec3 new_power = glm::vec3(0.0f);
 
     // TODO implement
+    stack.push(node);
+    while (!stack.empty()) {
+        // Pop the next node from the stack
+        node = stack.pop();
+        const auto& photon = photon_map[node];
 
+        switch (photon.node_type) {
+            case KDNodeType::Empty:
+                // No photons in this node, continue
+                continue;
+
+            case KDNodeType::Leaf:
+                // Accumulate photons in leaf nodes
+                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                break;
+            
+            case KDNodeType::DoubleLeaf:
+                // Accumulate photons in double leaf nodes
+                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                // Also accumulate the next photon in the double leaf
+                accumulatePhoton(photon_map[node + 1], gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                break;
+
+            case KDNodeType::AxisX:
+                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                addChildrenToStack(stack, node, gather_position.x - photon.position.x, gather_radius_sq);
+                break;
+            case KDNodeType::AxisY:
+                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                addChildrenToStack(stack, node, gather_position.y - photon.position.y, gather_radius_sq);
+                break;
+            case KDNodeType::AxisZ:
+                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                addChildrenToStack(stack, node, gather_position.z - photon.position.z, gather_radius_sq);
+                break;
+        }
+    }
     //
 
     // The photon map has a limited size, and some photons that *should* have been

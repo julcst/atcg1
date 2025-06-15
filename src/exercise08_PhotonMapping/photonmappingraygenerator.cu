@@ -333,13 +333,11 @@ extern "C" __global__ void __raygen__traceCamera()
             break;
         }
 
-        /*
-        // Uncomment to visualize (raw) photon map!
-        photon_gather_throughput = glm::vec3(1/glm::pi<float>() );
-        photon_gather_position = si.position;
-        photon_gather_normal = si.normal;
-        break;
-        */
+        // // Uncomment to visualize (raw) photon map!
+        // photon_gather_throughput = glm::vec3(1/glm::pi<float>() );
+        // photon_gather_position = si.position;
+        // photon_gather_normal = si.normal;
+        // break;
 
         // Handle emitter contribution if present
         if (si.emitter != nullptr)
@@ -368,9 +366,14 @@ extern "C" __global__ void __raygen__traceCamera()
          * - If the bsdf at the surface interaction is a diffuse BSDF, gather from photon map instead of continuing to trace rays.
          * Hint: Fill the photon_gather_* variables, the actual gathering from the photon map happens in a subsequent compute shader pass.
          */
-
         // TODO implement
-
+        if (has_flag(si.bsdf->component_flags, BSDFComponentFlag::DiffuseReflection))
+        {
+            // Gather photons from the photon map
+            photon_gather_throughput = ray_ctx.throughput;
+            photon_gather_position = si.position;
+            photon_gather_normal = si.normal;
+        }
         //
 
 

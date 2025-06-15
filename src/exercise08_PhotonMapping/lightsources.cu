@@ -156,7 +156,14 @@ extern "C" __device__ EmitterPhotonSamplingResult __direct_callable__spherelight
      *     - Compute the sampling pdf and radiance of this photon.
      * Hint: Since we assume diffuse emission of light, the emitted radiance is `glm::dot(surface_normal, light_dir) * sbt_data->radiance`.
      */
-
+    result.normal_at_light = warp_square_to_sphere_uniform(rng.next2d());
+    result.position = sbt_data->position + sbt_data->radius * result.normal_at_light;
+    const auto area = 4 * M_PIf * sbt_data->radius * sbt_data->radius;
+    const auto local_frame = opg::compute_local_frame(result.normal_at_light);
+    const auto local_direction = warp_square_to_hemisphere_cosine(rng.next2d());
+    result.direction = local_frame * warp_square_to_hemisphere_cosine(rng.next2d());
+    result.sampling_pdf = warp_square_to_hemisphere_cosine_pdf(local_direction) / area; // pdf of sampling position and direction on sphere
+    result.radiance_weight = sbt_data->radiance * area; // = (radiance * NdotL) / (NdotL / PI / area) = radiance * area
     //
 
     return result;
@@ -280,6 +287,59 @@ extern "C" __device__ EmitterPhotonSamplingResult __direct_callable__meshlight_s
      * Hint: Since we assume diffuse emission of light, the emitted radiance is `glm::dot(surface_normal, light_dir) * sbt_data->radiance`.
      */
 
+    // Select the triangle to sample a direction from uniformly at random, proportional to its surface area
+    uint32_t triangle_index = 0;
+    // Sample the barycentric coordinates on the triangle uniformly.
+    glm::vec2 triangle_barys = glm::vec2(0, 0);
+
+    triangle_index = opg::binary_search(sbt_data->mesh_cdf, rng.next1d());
+
+    triangle_barys = rng.next2d();
+    // Mirror barys at diagonal line to cover a triangle instead of a square
+    if (triangle_barys.x + triangle_barys.y > 1)
+        triangle_barys = glm::vec2(1) - triangle_barys;
+
+
+    // Compute the `light_position` using the triangle_index and the triangle_barys on the mesh:
+
+    // Indices of triangle vertices in the mesh
+    glm::uvec3 vertex_indices = glm::uvec3(0u);
+    if (sbt_data->mesh_indices.elmt_byte_size == sizeof(glm::u32vec3))
+    {
+        // Indices stored as 32-bit unsigned integers
+        const glm::u32vec3* indices = reinterpret_cast<glm::u32vec3*>(sbt_data->mesh_indices.data);
+        vertex_indices = glm::uvec3(indices[triangle_index]);
+    }
+    else
+    {
+        // Indices stored as 16-bit unsigned integers
+        const glm::u16vec3* indices = reinterpret_cast<glm::u16vec3*>(sbt_data->mesh_indices.data);
+        vertex_indices = glm::uvec3(indices[triangle_index]);
+    }
+
+    // Vertex positions of selected triangle
+    glm::vec3 P0 = sbt_data->mesh_positions[vertex_indices.x];
+    glm::vec3 P1 = sbt_data->mesh_positions[vertex_indices.y];
+    glm::vec3 P2 = sbt_data->mesh_positions[vertex_indices.z];
+
+    // Compute local position
+    glm::vec3 local_light_position = (1.0f-triangle_barys.x-triangle_barys.y)*P0 + triangle_barys.x*P1 + triangle_barys.y*P2;
+    // Transform local position to world position
+    result.position = glm::vec3(sbt_data->local_to_world * glm::vec4(local_light_position, 1));
+
+    // Compute local normal
+    glm::vec3 local_light_normal = glm::cross(P1-P0, P2-P0);
+    // Normals are transformed by (A^-1)^T instead of A
+    result.normal_at_light = glm::normalize(glm::transpose(glm::mat3(sbt_data->world_to_local)) * local_light_normal);
+
+
+    // Assemble sampling result
+    const auto local_frame = opg::compute_local_frame(result.normal_at_light);
+    const auto local_direction = warp_square_to_hemisphere_cosine(rng.next2d());
+    result.direction = local_frame * local_direction;
+
+    result.sampling_pdf = warp_square_to_hemisphere_cosine_pdf(local_direction) / sbt_data->total_surface_area; // pdf of sampling position and direction on mesh
+    result.radiance_weight = sbt_data->radiance * sbt_data->total_surface_area; // = (radiance * NdotL) / (NdotL / PI / area) = radiance * area
     //
 
     return result;
