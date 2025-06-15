@@ -139,15 +139,15 @@ __global__ void gatherPhotonsKernel(
                 break;
 
             case KDNodeType::AxisX:
-                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                //accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
                 addChildrenToStack(stack, node, gather_position.x - photon.position.x, gather_radius_sq);
                 break;
             case KDNodeType::AxisY:
-                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                //accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
                 addChildrenToStack(stack, node, gather_position.y - photon.position.y, gather_radius_sq);
                 break;
             case KDNodeType::AxisZ:
-                accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
+                //accumulatePhoton(photon, gather_position, gather_normal, gather_throughput, gather_radius_sq, new_photon_count, new_power);
                 addChildrenToStack(stack, node, gather_position.z - photon.position.z, gather_radius_sq);
                 break;
         }
@@ -169,7 +169,13 @@ __global__ void gatherPhotonsKernel(
     //
 
     // TODO implement
-
+    if (gather_photon_count + new_photon_count > 0) {
+        const auto new_gather_photon_count = gather_photon_count + alpha * new_photon_count;
+        const auto ratio = new_gather_photon_count / (gather_photon_count + new_photon_count);
+        gather_radius_sq *= sqrtf(ratio);
+        gather_total_power *= ratio;
+        gather_photon_count = new_gather_photon_count;
+    }
     //
 
     // Compute gathered radiance from gathered irradiance?

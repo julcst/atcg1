@@ -370,9 +370,10 @@ extern "C" __global__ void __raygen__traceCamera()
         if (has_flag(si.bsdf->component_flags, BSDFComponentFlag::DiffuseReflection))
         {
             // Gather photons from the photon map
-            photon_gather_throughput = ray_ctx.throughput;
+            photon_gather_throughput = ray_ctx.throughput * si.bsdf->evalDiffuseAlbedo(si);
             photon_gather_position = si.position;
             photon_gather_normal = si.normal;
+            break;
         }
         //
 

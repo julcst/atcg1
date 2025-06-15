@@ -163,7 +163,7 @@ extern "C" __device__ EmitterPhotonSamplingResult __direct_callable__spherelight
     const auto local_direction = warp_square_to_hemisphere_cosine(rng.next2d());
     result.direction = local_frame * warp_square_to_hemisphere_cosine(rng.next2d());
     result.sampling_pdf = warp_square_to_hemisphere_cosine_pdf(local_direction) / area; // pdf of sampling position and direction on sphere
-    result.radiance_weight = sbt_data->radiance * area; // = (radiance * NdotL) / (NdotL / PI / area) = radiance * area
+    result.radiance_weight = sbt_data->radiance * area * M_PIf; // = (radiance * NdotL) / (NdotL / PI / area) = radiance * area * PI
     //
 
     return result;
@@ -339,7 +339,7 @@ extern "C" __device__ EmitterPhotonSamplingResult __direct_callable__meshlight_s
     result.direction = local_frame * local_direction;
 
     result.sampling_pdf = warp_square_to_hemisphere_cosine_pdf(local_direction) / sbt_data->total_surface_area; // pdf of sampling position and direction on mesh
-    result.radiance_weight = sbt_data->radiance * sbt_data->total_surface_area; // = (radiance * NdotL) / (NdotL / PI / area) = radiance * area
+    result.radiance_weight = sbt_data->radiance * sbt_data->total_surface_area * M_PIf; // = (radiance * NdotL) / (NdotL / PI / area) = radiance * area * PI
     //
 
     return result;
