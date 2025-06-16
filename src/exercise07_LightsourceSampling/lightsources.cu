@@ -74,8 +74,30 @@ extern "C" __device__ EmitterSamplingResult __direct_callable__spherelight_sampl
      */
 
     // TODO implement
-
-    //
+    // Sample a random point on the spherical cap
+    glm::vec2 rand = rng.next2d();
+    float cosTheta = 1 - rand.x * cap_height; // in [1 - h, 1]
+    float phi = 2.0f * glm::pi<float>() * rand.y; // in [0, 2pi]
+    // Convert spherical coordinates to Cartesian coordinates in the local frame
+    glm::vec3 local_light_dir;
+    local_light_dir.x = glm::sqrt(1 - cosTheta * cosTheta) * glm::cos(phi);
+    local_light_dir.y = glm::sqrt(1 - cosTheta * cosTheta) * glm::sin(phi);
+    local_light_dir.z = cosTheta;
+    glm::vec3 light_direction = normalize(local_frame * local_light_dir); // Transform to world coordinates
+    result.direction_to_light = -light_direction;
+    // Compute the position of the light source
+    glm::vec3 light_position = sbt_data->position + light_center_distance * light_direction;
+    // Compute the normal at the light source
+    glm::vec3 light_normal = light_direction;
+    result.normal_at_light = light_normal;
+    // Compute the distance to the light source
+    float light_distance = glm::length(light_position - si.position);
+    result.distance_to_light = light_distance;
+    // Compute the radiance weight at the receiver
+    result.radiance_weight_at_receiver = sbt_data->radiance * glm::dot(light_normal, light_direction) / (light_distance * light_distance);
+    // Compute the sampling PDF
+    result.sampling_pdf = glm::pi<float>() * sbt_data->radius * sbt_data->radius / (light_distance * light_distance);
+    result.radiance_weight_at_receiver = sbt_data->radiance;
 
     return result;
 }
@@ -96,7 +118,7 @@ extern "C" __device__ float __direct_callable__spherelight_evalLightSamplingPDF(
     float sampling_pdf = 0;
 
     // TODO implement
-
+    sampling_pdf = glm::pi<float>() * sbt_data->radius * sbt_data->radius / (light_center_distance * light_center_distance);
     //
 
     return sampling_pdf;
@@ -131,7 +153,8 @@ extern "C" __device__ EmitterSamplingResult __direct_callable__meshlight_sampleL
     glm::vec2 triangle_barys = glm::vec2(0, 0);
 
     // TODO implement
-
+    triangle_index = binary_search(sbt_data->mesh_cdf, rng.next1d());
+    const auto triangle_pdf = sbt_data->mesh_cdf[triangle_index] / sbt_data->total_surface_area; // The probability of sampling this triangle is proportional to its area
     // 
 
 
@@ -174,7 +197,12 @@ extern "C" __device__ EmitterSamplingResult __direct_callable__meshlight_sampleL
     result.sampling_pdf = 0; // initialize with invalid sample
 
     // TODO implement
-
+    result.distance_to_light = glm::length(light_position - si.position);
+    result.direction_to_light = glm::normalize(light_position - si.position);
+    const auto cosThetaL = abs(glm::dot(light_normal, result.direction_to_light));
+    result.sampling_pdf = result.distance_to_light * result.distance_to_light * triangle_pdf / cosThetaL;
+    result.normal_at_light = light_normal;
+    result.radiance_weight_at_receiver = sbt_data->radiance;
     //
 
     return result;
@@ -197,7 +225,9 @@ extern "C" __device__ float __direct_callable__meshlight_evalLightSamplingPDF(co
     float light_direction_pdf = 0;
 
     // TODO implement
-
+    const auto triangle_pdf = sbt_data->mesh_cdf[si_on_light.primitive_index] / sbt_data->total_surface_area; // The probability of sampling this triangle is proportional to its area
+    const auto cosThetaL = abs(glm::dot(light_normal, light_ray_dir));
+    light_direction_pdf =  light_ray_length * light_ray_length * triangle_pdf / (cosThetaL);
     //
 
     return light_direction_pdf;

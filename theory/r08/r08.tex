@@ -1,0 +1,43 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[left=3.5cm, right = 3.5cm, top=3.5cm, bottom=3.5cm, head=13.6pt]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{comment}
+\usepackage{csquotes}
+\usepackage{enumitem}
+\usepackage{stmaryrd}
+
+\title{Advanced Topics in Computer Graphics I - Sheet R08}
+\author{Ninian Kaspers, Robin Landsgesell, Julian Stamm}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+
+    \section*{Assignment 2}
+
+    a) Photon Mapping does not converge to the correct result when the sample count approaches infinity.
+
+    b) By decreasing the gathering radius towards zero, the bias converges to zero.
+    Thus, Photon Mapping is a consistent estimator.
+
+    c) The Photons are stored in a spatial tree structure like a k-d-tree or a BVH.
+    Thus, we can solve fixed radius nearest neighbor queries efficiently in logarithmic time.
+
+    d) No, we do not have to regenerate the photon map when changing the scene, as the photons are stored with respect to their global position.
+    We only have to rebuild when the scene is changed.
+
+    e) As indirect illumination is generally low frequency, we can use a low number of photons and a large radius to achieve a good result.
+    Caustics, on the other hand, tend to be high frequency and require a large number of photons and a small radius to achieve a good result.
+    Thus, we can split the photons in a caustic and a global map by storing if a specular sample occured between the photon and the light source.
+    We then can use different radii for the two maps, which allows us to get rid of high frequency noise in the global map while simultaneously achieving high quality caustics.
+\end{document}
+
