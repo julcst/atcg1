@@ -1,0 +1,182 @@
+<scene>
+
+    <component type="camera" name="mycamera">
+        <property name="fov_y" type="float" value="1.024778957977204" />
+        <property name="lookat_distance" type="float" value="13.5" />
+        <property name="to_world" type="transform">
+            <translate x="0" y="5" z="13.5" />
+        </property>
+    </component>
+
+    <component type="raygen.pathtracing">
+        <property name="camera" type="reference" value="mycamera" />
+    </component>
+
+
+    <!-- Sphere shape -->
+    <component type="shape.sphere" name="mysphere" />
+
+    <!-- Plane shape (mesh) -->
+    <component type="shape.rectangle" name="myplane" />
+
+    <!-- Cube shape (mesh) -->
+    <component type="shape.cube" name="mycube" />
+
+    <!-- BSDFs -->
+    <component type="bsdf.ggx" name="red_bsdf">
+        <property name="diffuse_color" type="vector" x="0.99" y="0.0" z="0.0" />
+        <property name="specular_f0" type="vector" x="0" y="0" z="0" />
+        <property name="roughness" type="float" value="1" />
+    </component>
+    <component type="bsdf.ggx" name="green_bsdf">
+        <property name="diffuse_color" type="vector" x="0.0" y="0.99" z="0.0" />
+        <property name="specular_f0" type="vector" x="0" y="0" z="0" />
+        <property name="roughness" type="float" value="1" />
+    </component>
+    <component type="bsdf.ggx" name="white_bsdf">
+        <property name="diffuse_color" type="vector" x="0.99" y="0.99" z="0.99" />
+        <property name="specular_f0" type="vector" x="0" y="0" z="0" />
+        <property name="roughness" type="float" value="1" />
+    </component>
+
+    <component type="shapeinstance" name="floor_wall">
+        <property name="shape" type="reference" value="myplane" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <rotate x="1" y="0" z="0" angle="-90" />
+            <scale x="5" y="5" z="5" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="ceiling_wall">
+        <property name="shape" type="reference" value="myplane" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="0" y="10" z="0" />
+            <rotate x="1" y="0" z="0" angle="90" />
+            <scale x="5" y="5" z="5" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="back_wall">
+        <property name="shape" type="reference" value="myplane" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="0" y="5" z="-5" />
+            <rotate x="1" y="0" z="0" angle="0" />
+            <scale x="5" y="5" z="5" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="left_wall">
+        <property name="shape" type="reference" value="myplane" />
+        <property name="bsdf" type="reference" value="green_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="-5" y="5" z="0" />
+            <rotate x="0" y="1" z="0" angle="90" />
+            <scale x="5" y="5" z="5" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="right_wall">
+        <property name="shape" type="reference" value="myplane" />
+        <property name="bsdf" type="reference" value="red_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="5" y="5" z="0" />
+            <rotate x="0" y="1" z="0" angle="-90" />
+            <scale x="5" y="5" z="5" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="middle_interior_wall">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="0" y="5" z="0" />
+            <rotate x="0" y="1" z="0" angle="-90" />
+            <scale x="5" y="5" z="0.1" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="left_interior_wall_1">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="-1.666" y="5" z="2.5" />
+            <scale x="1.666" y="5" z="0.1" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="left_interior_wall_2">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="-3.333" y="5" z="0" />
+            <scale x="1.666" y="5" z="0.1" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="left_interior_wall_3">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="-1.666" y="5" z="-2.5" />
+            <scale x="1.666" y="5" z="0.1" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="right_interior_wall_1">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="1.666" y="2" z="2.5" />
+            <scale x="1.666" y="2" z="0.1" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="right_interior_wall_2">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="3.333" y="2" z="0" />
+            <scale x="1.666" y="2" z="0.1" />
+        </property>
+    </component>
+
+    <component type="shapeinstance" name="right_interior_wall_3">
+        <property name="shape" type="reference" value="mycube" />
+        <property name="bsdf" type="reference" value="white_bsdf" />
+        <property name="to_world" type="transform">
+            <translate x="1.666" y="2" z="-2.5" />
+            <scale x="1.666" y="2" z="0.1" />
+        </property>
+    </component>
+
+
+    <component type="emitter.sphere" name="sphere_emitter_left">
+        <property name="radiance" type="float" value="50" />
+        <property name="color" type="vector" x="1.0" y="1.0" z="1.0" />
+    </component>
+    <component type="shapeinstance" name="center_sphere">
+        <property name="shape" type="reference" value="mysphere" />
+        <property name="emitter" type="reference" value="sphere_emitter_left" />
+        <property name="to_world" type="transform">
+            <translate x="-3" y="1" z="-3.75" />
+            <scale x="0.4" y="0.4" z="0.4" />
+        </property>
+    </component>
+
+    <component type="emitter.sphere" name="sphere_emitter_right">
+        <property name="radiance" type="float" value="50" />
+        <property name="color" type="vector" x="1.0" y="1.0" z="1.0" />
+    </component>
+    <component type="shapeinstance" name="center_sphere">
+        <property name="shape" type="reference" value="mysphere" />
+        <property name="emitter" type="reference" value="sphere_emitter_right" />
+        <property name="to_world" type="transform">
+            <translate x="3" y="1" z="-3.75" />
+            <scale x="0.4" y="0.4" z="0.4" />
+        </property>
+    </component>
+
+</scene>
