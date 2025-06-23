@@ -313,8 +313,61 @@ __forceinline__ __device__ float sum_bdpt_weights(
          */
 
         // TODO implement
+        // Get the current vertex
+        const PathVertex &current_vertex = active_subpath_vertices[i];
 
-        //
+        float oldPdf, newPdf = 1.0f;
+
+        if (!next_si_is_light) {
+            // Next vertex is not a light source, evaluate BSDF
+            const auto &next_vertex = active_subpath_vertices[i+1];
+            auto connection_direction = next_vertex.si.position - current_vertex.si.position;
+            const auto connection_distance_squared = glm::dot(connection_direction, connection_direction);
+            const auto connection_distance = glm::sqrt(connection_distance_squared);
+            connection_direction /= connection_distance; // Normalize direction
+            const auto &next_bsdf_eval = current_vertex.si.bsdf->evalBSDF(
+                current_vertex.si,
+                normalize(next_vertex.si.position - current_vertex.si.position),
+                +BSDFComponentFlag::Any
+            );
+            oldPdf = next_bsdf_eval.sampling_pdf * dot(connection_direction, current_vertex.si.normal) * dot(-connection_direction, next_vertex.si.normal) / connection_distance_squared;
+        } else {
+            // Next vertex is a light source, use diffuse
+            const auto &next_vertex = active_subpath_vertices[i+1];
+            auto connection_direction = next_vertex.si.position - current_vertex.si.position;
+            const auto connection_distance_squared = glm::dot(connection_direction, connection_direction);
+            const auto connection_distance = glm::sqrt(connection_distance_squared);
+            connection_direction /= connection_distance; // Normalize direction
+            oldPdf = dot(connection_direction, current_vertex.si.normal) * dot(-connection_direction, next_vertex.si.normal) / connection_distance_squared / M_PI;
+        }
+
+        if (!prev_si_is_light) {
+            // Previous vertex is not a light source, evaluate BSDF
+            const auto &prev_vertex = active_subpath_vertices[i-1];
+            auto connection_direction = current_vertex.si.position - prev_vertex.si.position;
+            const auto connection_distance_squared = glm::dot(connection_direction, connection_direction);
+            const auto connection_distance = glm::sqrt(connection_distance_squared);
+            connection_direction /= connection_distance; // Normalize direction
+            const auto &prev_bsdf_eval = prev_vertex.si.bsdf->evalBSDF(
+                prev_vertex.si,
+                normalize(current_vertex.si.position - prev_vertex.si.position),
+                +BSDFComponentFlag::Any
+            );
+            newPdf = prev_bsdf_eval.sampling_pdf * dot(connection_direction, prev_vertex.si.normal) * dot(-connection_direction, current_vertex.si.normal) / connection_distance_squared;
+        } else {
+            // Previous vertex is a light source, use diffuse
+            const auto &prev_vertex = active_subpath_vertices[i-1];
+            auto connection_direction = current_vertex.si.position - prev_vertex.si.position;
+            const auto connection_distance_squared = glm::dot(connection_direction, connection_direction);
+            const auto connection_distance = glm::sqrt(connection_distance_squared);
+            connection_direction /= connection_distance; // Normalize direction
+            newPdf = dot(connection_direction, prev_vertex.si.normal) * dot(-connection_direction, current_vertex.si.normal) / connection_distance_squared / M_PI;
+        }
+
+        current_weight /= oldPdf;
+        current_weight *= newPdf;
+
+        weight_sum += current_weight;
     }
 
     return weight_sum;
@@ -372,8 +425,56 @@ extern "C" __global__ void __raygen__combine()
              */
 
             // TODO implement
+            // Check if the connection is valid
+            if (traceOcclusion(
+                    params.traversable_handle,
+                    connection_origin,
+                    connection_direction,
+                    params.scene_epsilon,                   // tmin: Start ray at ray_origin + tmin * ray_direction
+                    connection_distance - params.scene_epsilon, // tmax: End ray at ray_origin + tmax * ray_direction
+                    params.occlusion_trace_params
+                ))
+            {
+                // Connection is occluded, skip this pair of subpaths
+                continue;
+            }
 
-            //
+            const auto vc_BSDF_eval = vertex_to_camera.si.bsdf->evalBSDF(
+                vertex_to_camera.si,
+                connection_direction,
+                +BSDFComponentFlag::Any
+            );
+
+            float vl_pdf = 0.0f;
+            if (const auto* vl_BSDF = vertex_to_light.si.bsdf)
+            {
+                const auto vl_BSDF_eval = vl_BSDF->evalBSDF(
+                    vertex_to_light.si,
+                    -connection_direction,
+                    +BSDFComponentFlag::Any
+                );
+                vl_pdf = vl_BSDF_eval.sampling_pdf;
+            } else {
+                // Light vertex is a light source, use diffuse emission
+                vl_pdf = glm::dot(-connection_direction, vertex_to_light.si.normal) / (connection_distance_squared * glm::pi<float>());
+            }
+
+            // const auto weight = multiple_importance_weight(
+            //     1.0f,
+            //     sum_bdpt_weights(
+            //         1.0f,
+            //         false, // active is camera subpath
+            //         s, // active subpath vertex count
+            //         per_pixel_data.camera_subpath.data(),
+            //         per_pixel_data.light_subpath.size(), // other subpath vertex count
+            //         per_pixel_data.light_subpath.data()
+            //     )
+            // );
+
+            const auto weight = 1.0f / (float) (per_pixel_data.camera_subpath.size() * per_pixel_data.light_subpath.size());
+
+            output_radiance += vertex_to_camera.throughput_weight * vc_BSDF_eval.bsdf_value *
+                            vertex_to_light.throughput_weight * vl_pdf* weight;
         }
     }
 
