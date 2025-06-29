@@ -13,11 +13,12 @@ extern "C" __device__ glm::vec3 __direct_callable__homogeneousMedium_evalTransmi
     /* Implement:
      * - Evaluate the transmittance for a certain distance along the given ray, i.e. the probability of encountering no absorbtion and no out-scattering.
      */
+    glm::vec3 sigma_a = sbt_data->sigma_a;
+    glm::vec3 sigma_s = sbt_data->sigma_s;
+    glm::vec3 sigma_t = sigma_a + sigma_s;
 
-    //
-
-    // Dummy implementation with no attenuation.
-    return glm::vec3(1);
+    //Beer-Lambert Law
+    return glm::exp(-sigma_t * glm::vec3(distance));
 }
 
 extern "C"  __device__ MediumSamplingResult __direct_callable__homogeneousMedium_sampleMediumEvent(const opg::Ray &ray, float max_distance, PCG32 &rng)
@@ -55,16 +56,36 @@ extern "C"  __device__ MediumSamplingResult __direct_callable__homogeneousMedium
         result.interaction.set_invalid();
 
         // TODO implement
-
+        glm::vec3 transmittance = glm::exp(-sigma_t * glm::vec3(max_distance));
+        glm::vec3 sampling_pdf = sigma_t * transmittance;
+        // transmittance_weight = transmittance divided by the sampling pdf
+        result.transmittance_weight = transmittance / sampling_pdf; // maybe just the transmittance without dividing it by the sampling pdf?
         //
 
         return result;
     }
 
     // TODO implement
-    // result.interaction.incoming_distance = ...
-    // result.transmittance_weight = ...
+    float sampled_distance = -glm::log(1 - rng.next1d())/rgb_to_scalar_weight(sigma_t);
 
+    if(sampled_distance > max_distance)
+    {
+        result.interaction.set_invalid();
+        //still account for absorption
+        glm::vec3 transmittance = glm::exp(-sigma_t * glm::vec3(max_distance));
+        glm::vec3 sampling_pdf = sigma_t * transmittance;
+        // transmittance_weight = transmittance divided by the sampling pdf
+        result.transmittance_weight = transmittance / sampling_pdf; // maybe just the transmittance without dividing it by the sampling pdf?
+        return result;
+    }
+
+    result.interaction.incoming_distance = sampled_distance;
+
+    glm::vec3 transmittance = glm::exp(-sigma_t * glm::vec3(sampled_distance));
+    glm::vec3 sampling_pdf = sigma_t * transmittance;
+    // transmittance_weight = transmittance divided by the sampling pdf
+    result.transmittance_weight = transmittance / sampling_pdf; // maybe just the transmittance without dividing it by the sampling pdf?
+    
     //
 
     // Compute the position of the medium interaction if it is valid.
