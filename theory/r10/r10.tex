@@ -1,0 +1,62 @@
+\documentclass{article}
+\usepackage{graphicx}
+\usepackage[left=3.5cm, right = 3.5cm, top=3.5cm, bottom=3.5cm, head=13.6pt]{geometry}
+\usepackage[onehalfspacing]{setspace}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{comment}
+\usepackage{csquotes}
+\usepackage{enumitem}
+\usepackage{stmaryrd}
+
+\title{\vspace{-3.5cm}Advanced Topics in Computer Graphics I - Sheet R10}
+\author{Ninian Kaspers, Robin Landsgesell, Julian Stamm}
+\date{\today}
+
+\begin{document}
+
+    \maketitle
+
+    \section*{Assignment 2}
+    a)
+    \begin{equation*}
+        p_{HG}(\mu | g) = \frac{1 - g^2}{2} \cdot (1 + g^2 - 2 g \mu)^{-\frac{3}{2}}
+    \end{equation*}
+    \scalebox{0.84}{\parbox{.5\linewidth}{%
+    \begin{align*}
+        \mathbb{E}[\mu] &= \int_{-1}^{1} \mu \cdot p_{HG}(\mu | g) d\mu\\
+        &= \int_{-1}^{1} \mu \cdot \frac{1 - g^2}{2} \cdot (1 + g^2 - 2 g \mu)^{-\frac{3}{2}} d\mu\\
+        &= \frac{1 - g^2}{2} \cdot \int_{-1}^{1} \mu \cdot (1 + g^2 - 2 g \mu)^{-\frac{3}{2}} d\mu\\
+        &\text{ substitute } t = 1 + g^2 - 2g \mu \Leftrightarrow \mu = \frac{1 + g^2 - t}{2g} \text{ with } dt = -2g\,d\mu \Leftrightarrow d\mu = \frac{1}{-2g}dt\\
+        &= \frac{1 - g^2}{2} \cdot \int_{(1+g)^2}^{(1-g)^2} \frac{1 + g^2 - t}{2g} \cdot t^{-\frac{3}{2}} \cdot \frac{1}{-2g}dt\\
+        &= \frac{1 - g^2}{2} \cdot -\frac{1}{4g^2} \cdot \int_{(1+g)^2}^{(1-g)^2} (1 + g^2 - t) \cdot t^{-\frac{3}{2}} dt\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \int_{(1+g)^2}^{(1-g)^2} (1 + g^2) t^{-\frac{3}{2}} - t^{-\frac{1}{2}} dt\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \int_{(1+g)^2}^{(1-g)^2} (1 + g^2) t^{-\frac{3}{2}} dt - \int_{(1+g)^2}^{(1-g)^2} t^{-\frac{1}{2}} dt\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[\left( (1 + g^2) \cdot \int_{(1+g)^2}^{(1-g)^2} t^{-\frac{3}{2}} dt \right) - \int_{(1+g)^2}^{(1-g)^2} t^{-\frac{1}{2}} dt \right]\\
+        &\text{with } \int t^{-\frac{3}{2}} dt = -2t^{-\frac{1}{2}} \text{ and } \int t^{-\frac{1}{2}} dt = 2t^{\frac{1}{2}}\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[\left((1 + g^2) \cdot \left[-2t^{-\frac{1}{2}}\right]_{(1+g)^2}^{(1-g)^2} \right) - \left[2t^{\frac{1}{2}}\right]_{(1+g)^2}^{(1-g)^2} \right]\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[\left( (1 + g^2) \cdot \left[-2((1-g)^2)^{-\frac{1}{2}} + 2((1+g)^2)^{-\frac{1}{2}}\right]\right) - \left[2((1-g)^2)^{\frac{1}{2}} - 2((1+g)^2)^{\frac{1}{2}}\right] \right]\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[\left( (1 + g^2) \cdot \left[-2((1-g)^2)^{-\frac{1}{2}} + 2((1+g)^2)^{-\frac{1}{2}}\right]\right) - 2((1-g)^2)^{\frac{1}{2}} + 2((1+g)^2)^{\frac{1}{2}} \right]\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[ (1 + g^2) \cdot \left[-2 \cdot \frac{1}{|1-g|} + 2 \cdot \frac{1}{|1+g|}\right] - 2 \cdot |1-g| + 2 \cdot |1+g|\right]\\
+        &\text{for } g \in [-1,1]: 1-g \geq 0 \Rightarrow |1-g|=1-g \text{ and } 1+g \geq 0 \Rightarrow |1+g| = 1+g\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[ (1 + g^2) \cdot \left[-2 \cdot \frac{1}{1-g} + 2 \cdot \frac{1}{1+g}\right] - 2 \cdot (1-g) + 2 \cdot (1+g)\right]\\
+        &= -\frac{1 - g^2}{8g^2} \cdot \left[ (1 + g^2) \cdot \left[\frac{-4g}{1-g^2}\right] + 4g\right]\\
+        &= -\frac{1 - g^2}{8g^2} \cdot -\frac{8g^3}{1-g^2}\\
+        &= g
+    \end{align*}
+    }}
+        
+    b) 
+    \begin{itemize}
+        \item $g=-1$: a dirac delta in the opposite direction of $\omega_i$, purely back-scattering
+        \item $g=0$: isotropic scattering, uniformly distributed on the sphere 
+        \item $g=1$: a dirac delta in the same direction of $\omega_i$, purely forward-scattering
+    \end{itemize}
+
+\end{document}
+
