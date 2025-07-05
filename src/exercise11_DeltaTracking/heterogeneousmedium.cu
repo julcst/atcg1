@@ -73,7 +73,7 @@ __device__ float estimate_transmittance(const opg::Ray &ray, float max_distance,
     float transmittance = 1.0f;
     float sigma_t = 0.0f;
     float sigma_bar = sbt_data->density_majorant;
-    distance = 0.0f;
+    float distance = 0.0f;
 
     while (true)
     {
