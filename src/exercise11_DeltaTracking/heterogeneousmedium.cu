@@ -37,7 +37,20 @@ __device__ float sample_free_flight_distance_delta_tracking(const opg::Ray &ray,
      * - Sample the distance of a medium event in the inverval [0, max_distance] along the given ray in the medium using the delta-tracking algorithm.
      * Hint: Use the functions above to sample the medium density and sample distances in homogeneous media.
      */
+    float sigma_t = 0.0f;
+    float sigma_bar = sbt_data->density_majorant;
+    distance = 0.0f;
 
+    while (true)
+    {
+        distance += warp_1d_sample_to_homogeneous_medium_event_distance(rng.next1d(), sigma_bar);
+        if (distance > max_distance) return distance = std::numeric_limits<float>::signaling_NaN(); // outside interval
+
+        glm::vec3 current_position = ray.at(distance);
+        sigma_t = evaluate_density_grid(current_position);
+
+        if(rng.next1d() < sigma_t / sigma_bar) break; // real collision
+    }
     //
 
     return distance;
@@ -55,9 +68,27 @@ __device__ float estimate_transmittance(const opg::Ray &ray, float max_distance,
      * Hint: Use the functions above to sample the medium density and sample distances in homogeneous media.
      */
 
+    // ratio-tracking
+    const HeterogeneousMediumData *sbt_data = *reinterpret_cast<const HeterogeneousMediumData **>(optixGetSbtDataPointer());
+    float transmittance = 1.0f;
+    float sigma_t = 0.0f;
+    float sigma_bar = sbt_data->density_majorant;
+    distance = 0.0f;
+
+    while (true)
+    {
+        distance += warp_1d_sample_to_homogeneous_medium_event_distance(rng.next1d(), sigma_bar);
+        if (distance >= max_distance) break;
+
+        glm::vec3 current_position = ray.at(distance);
+        sigma_t = evaluate_density_grid(current_position);
+        float sigma_n = sigma_bar - sigma_t;
+        float ratio = sigma_n / sigma_bar;
+        transmittance *= ratio;
+    }
     //
 
-    return 1;
+    return transmittance;
 }
 
 
